@@ -1,0 +1,36 @@
+"""
+Configuration management for the HSDS API application.
+
+Loads settings from environment variables with sensible defaults.
+"""
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+    
+    # Airtable Configuration
+    airtable_api_key: str
+    airtable_base_id: str
+    
+    # Sync Settings
+    sync_interval_minutes: int = 15
+    
+    # Server Settings
+    host: str = "0.0.0.0"
+    port: int = 8080
+    
+    # API Metadata (UK Open Referral compliant)
+    api_version: str = "HSDS-UK-3.0"
+    api_profile: str = "https://github.com/OpenReferralUK/uk-profile/blob/main/docs/index.md"
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()

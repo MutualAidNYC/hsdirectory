@@ -1,13 +1,16 @@
 """
-Services API endpoints.
+HSDS Services endpoints.
 
-REQUIRED endpoints per HSDS specification.
+Serves service data from the SQLite cache (synced from Airtable).
 """
-from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
-from models.hsds import Service, ServiceSummary, Page
-from airtable.client import get_airtable_client
+from typing import Optional, List
+from fastapi import APIRouter, Query, HTTPException
+
+from models.hsds import Page, Service, ServiceSummary
+from db.database import get_records, get_record, search_services, get_db
 from transform.mapper import HSDSMapper
+from config import get_settings
+import json
 
 router = APIRouter(prefix="/services", tags=["services"])
 
@@ -28,77 +31,108 @@ async def list_services(
     List services with pagination and filtering.
     
     REQUIRED endpoint per HSDS specification.
+    Serves data from SQLite cache for fast performance.
     """
-    client = get_airtable_client()
     mapper = HSDSMapper()
+    settings = get_settings()
     
-    # Build filter formula if needed
-    conditions = []
-    if organization_id:
-        conditions.append(f"FIND('{organization_id}', ARRAYJOIN({{organization}}, ',')) > 0")
-    if taxonomy_term_id:
-        conditions.append(f"FIND('{taxonomy_term_id}', ARRAYJOIN({{taxonomy_terms}}, ',')) > 0")
-    
-    filter_formula = None
-    if conditions:
-        filter_formula = f"AND({', '.join(conditions)})" if len(conditions) > 1 else conditions[0]
-    
-    # Fetch services from Airtable
-    records = await client.list_records("services", filter_formula=filter_formula)
-    
-    # Apply search filter locally if provided
-    if search:
-        search_lower = search.lower()
-        records = [
-            r for r in records
-            if search_lower in (r.get("fields", {}).get("name", "") or "").lower()
-            or search_lower in (r.get("fields", {}).get("description", "") or "").lower()
-        ]
-    
-    # Map to HSDS models
-    services = []
-    for record in records:
-        fields = record.get("fields", {})
+    async with get_db() as db:
+        # Build query based on filters
+        base_query = "SELECT id, airtable_id, organization_id, data FROM services"
+        count_query = "SELECT COUNT(*) FROM services"
+        where_clauses = []
+        params = []
         
-        # Fetch organization summary if organization linked
-        org_summary = None
-        org_ids = fields.get("organization", [])
-        if org_ids:
-            org_record = await client.get_record("organizations", org_ids[0])
-            if org_record:
-                org_summary = mapper.map_organization_summary(org_record.get("fields", {}))
+        # Filter by published status if configured
+        if settings.published_status_value:
+            where_clauses.append("json_extract(data, '$.status') = ?")
+            params.append(settings.published_status_value)
         
-        # Fetch program if linked
-        program = None
-        program_ids = fields.get("programs", [])
-        if program_ids:
-            prog_record = await client.get_record("programs", program_ids[0])
-            if prog_record:
-                program = mapper.map_program(prog_record.get("fields", {}))
+        # Filter by organization_id
+        if organization_id:
+            where_clauses.append("organization_id = ?")
+            params.append(organization_id)
         
-        if minimal:
-            # Return minimal data
-            services.append({
-                "id": fields.get("id", record["id"]),
-                "last_modified": fields.get("lastUpdated")
-            })
-        elif full:
-            # Return full nested service
-            service = await _get_full_service(record["id"], fields, mapper, client)
-            services.append(service.model_dump())
-        else:
-            # Return service summary - extract organization_id (ORUK required)
-            org_id = org_ids[0] if org_ids else "unknown"
-            summary = mapper.map_service_summary(
-                fields,
-                organization_id=org_id,
-                organization=org_summary,
-                program=program
+        # Text search on name and description
+        if search:
+            where_clauses.append(
+                "(json_extract(data, '$.name') LIKE ? OR json_extract(data, '$.description') LIKE ?)"
             )
-            services.append(summary.model_dump())
-    
-    # Paginate results
-    return mapper.paginate(services, page, per_page)
+            params.extend([f"%{search}%", f"%{search}%"])
+        
+        # Apply WHERE clauses
+        if where_clauses:
+            where_str = " WHERE " + " AND ".join(where_clauses)
+            base_query += where_str
+            count_query += where_str
+        
+        # Get total count
+        cursor = await db.execute(count_query, params)
+        total = (await cursor.fetchone())[0]
+        
+        # Add pagination
+        offset = (page - 1) * per_page
+        base_query += " ORDER BY json_extract(data, '$.name') LIMIT ? OFFSET ?"
+        params.extend([per_page, offset])
+        
+        # Fetch records
+        cursor = await db.execute(base_query, params)
+        rows = await cursor.fetchall()
+        
+        # Map to HSDS models
+        services = []
+        for row in rows:
+            record_id = row[0]
+            airtable_id = row[1]
+            org_id = row[2] or "unknown"
+            data = json.loads(row[3])
+            
+            # Add the ID to the data dict
+            data["id"] = record_id
+            
+            if minimal:
+                services.append({
+                    "id": record_id,
+                    "last_modified": data.get("lastUpdated")
+                })
+            elif full:
+                # For full mode, get related data from cache
+                service = await _get_full_service_from_cache(db, record_id, data, org_id, mapper)
+                services.append(service.model_dump())
+            else:
+                # Get organization summary from cache if available
+                org_summary = None
+                if org_id != "unknown":
+                    org_cursor = await db.execute(
+                        "SELECT data FROM organizations WHERE id = ? OR airtable_id = ?",
+                        [org_id, org_id]
+                    )
+                    org_row = await org_cursor.fetchone()
+                    if org_row:
+                        org_data = json.loads(org_row[0])
+                        org_summary = mapper.map_organization_summary(org_data)
+                
+                # Map service summary
+                summary = mapper.map_service_summary(
+                    data,
+                    organization_id=org_id,
+                    organization=org_summary,
+                    program=None
+                )
+                services.append(summary.model_dump())
+        
+        # Return paginated response
+        total_pages = (total + per_page - 1) // per_page
+        return Page(
+            total_items=total,
+            total_pages=total_pages,
+            page_number=page,
+            size=per_page,
+            first_page=(page == 1),
+            last_page=(page >= total_pages),
+            empty=(len(services) == 0),
+            contents=services
+        )
 
 
 @router.get("/{service_id}", response_model=Service)
@@ -107,148 +141,147 @@ async def get_service(service_id: str):
     Get a single service with all related data.
     
     REQUIRED endpoint per HSDS specification.
+    Serves data from SQLite cache.
     """
-    client = get_airtable_client()
     mapper = HSDSMapper()
+    settings = get_settings()
     
-    # Search for service by HSDS ID or Airtable ID
-    records = await client.list_records(
-        "services",
-        filter_formula=f"OR({{id}}='{service_id}', RECORD_ID()='{service_id}')"
+    async with get_db() as db:
+        # Search for service by HSDS ID or Airtable ID
+        cursor = await db.execute(
+            "SELECT id, airtable_id, organization_id, data FROM services WHERE id = ? OR airtable_id = ?",
+            [service_id, service_id]
+        )
+        row = await cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        record_id = row[0]
+        airtable_id = row[1]
+        org_id = row[2] or "unknown"
+        data = json.loads(row[3])
+        data["id"] = record_id
+        
+        # Check published status if configured
+        if settings.published_status_value:
+            if data.get("status") != settings.published_status_value:
+                raise HTTPException(status_code=404, detail="Service not found")
+        
+        return await _get_full_service_from_cache(db, record_id, data, org_id, mapper)
+
+
+async def _get_full_service_from_cache(db, service_id: str, data: dict, org_id: str, mapper: HSDSMapper) -> Service:
+    """Build a full Service object from cached data."""
+    
+    # Get organization
+    organization = None
+    if org_id != "unknown":
+        cursor = await db.execute(
+            "SELECT data FROM organizations WHERE id = ? OR airtable_id = ?",
+            [org_id, org_id]
+        )
+        org_row = await cursor.fetchone()
+        if org_row:
+            org_data = json.loads(org_row[0])
+            org_data["id"] = org_id
+            organization = mapper.map_organization(org_data)
+    
+    # Get service_at_locations
+    cursor = await db.execute(
+        "SELECT id, location_id, data FROM service_at_locations WHERE service_id = ?",
+        [service_id]
     )
+    sal_rows = await cursor.fetchall()
     
-    if not records:
-        raise HTTPException(status_code=404, detail="Service not found")
-    
-    record = records[0]
-    fields = record.get("fields", {})
-    
-    return await _get_full_service(record["id"], fields, mapper, client)
-
-
-async def _get_full_service(
-    airtable_id: str,
-    fields: dict,
-    mapper: HSDSMapper,
-    client
-) -> Service:
-    """Helper to build a fully nested service."""
-    
-    # Fetch organization
-    org_summary = None
-    org_ids = fields.get("organization", [])
-    if org_ids:
-        org_record = await client.get_record("organizations", org_ids[0])
-        if org_record:
-            org_summary = mapper.map_organization_summary(org_record.get("fields", {}))
-    
-    # Fetch program
-    program = None
-    program_ids = fields.get("programs", [])
-    if program_ids:
-        prog_record = await client.get_record("programs", program_ids[0])
-        if prog_record:
-            program = mapper.map_program(prog_record.get("fields", {}))
-    
-    # Fetch phones
-    phones = []
-    phone_ids = fields.get("phones", [])
-    if phone_ids:
-        phone_records = await client.get_linked_records("phones", phone_ids)
-        phones = [mapper.map_phone(r.get("fields", {})) for r in phone_records]
-    
-    # Fetch contacts
-    contacts = []
-    contact_ids = fields.get("contacts", [])
-    if contact_ids:
-        contact_records = await client.get_linked_records("contacts", contact_ids)
-        contacts = [mapper.map_contact(r.get("fields", {})) for r in contact_records]
-    
-    # Fetch schedules
-    schedules = []
-    schedule_ids = fields.get("schedules", [])
-    if schedule_ids:
-        schedule_records = await client.get_linked_records("schedules", schedule_ids)
-        schedules = [mapper.map_schedule(r.get("fields", {})) for r in schedule_records]
-    
-    # Fetch languages
-    languages = []
-    language_ids = fields.get("languages", [])
-    if language_ids:
-        language_records = await client.get_linked_records("languages", language_ids)
-        languages = [mapper.map_language(r.get("fields", {})) for r in language_records]
-    
-    # Fetch service areas
-    service_areas = []
-    area_ids = fields.get("service_areas", [])
-    if area_ids:
-        area_records = await client.get_linked_records("service_areas", area_ids)
-        service_areas = [mapper.map_service_area(r.get("fields", {})) for r in area_records]
-    
-    # Fetch service_at_locations with nested location data
     service_at_locations = []
-    sal_ids = fields.get("service_at_location", [])
-    if sal_ids:
-        sal_records = await client.get_linked_records("service_at_location", sal_ids)
-        for sal_record in sal_records:
-            sal_fields = sal_record.get("fields", {})
-            
-            # Fetch the location for this service_at_location
-            location = None
-            loc_ids = sal_fields.get("locations", [])
-            if loc_ids:
-                loc_record = await client.get_record("locations", loc_ids[0])
-                if loc_record:
-                    loc_fields = loc_record.get("fields", {})
-                    
-                    # Fetch addresses for location
-                    addresses = []
-                    addr_ids = loc_fields.get("addresses", [])
-                    if addr_ids:
-                        addr_records = await client.get_linked_records("addresses", addr_ids)
-                        addresses = [mapper.map_address(r.get("fields", {})) for r in addr_records]
-                    
-                    location = mapper.map_location(loc_fields, addresses=addresses)
-            
-            sal = mapper.map_service_at_location(sal_fields, location=location)
-            service_at_locations.append(sal)
+    for sal_row in sal_rows:
+        sal_id = sal_row[0]
+        location_id = sal_row[1]
+        sal_data = json.loads(sal_row[2])
+        sal_data["id"] = sal_id
+        
+        # Get location
+        location = None
+        if location_id:
+            loc_cursor = await db.execute(
+                "SELECT data FROM locations WHERE id = ? OR airtable_id = ?",
+                [location_id, location_id]
+            )
+            loc_row = await loc_cursor.fetchone()
+            if loc_row:
+                loc_data = json.loads(loc_row[0])
+                loc_data["id"] = location_id
+                
+                # Get address for location
+                addresses = []
+                addr_ids = loc_data.get("addresses", [])
+                if addr_ids:
+                    for addr_id in addr_ids[:1]:  # Get first address
+                        addr_cursor = await db.execute(
+                            "SELECT data FROM addresses WHERE id = ? OR airtable_id = ?",
+                            [addr_id, addr_id]
+                        )
+                        addr_row = await addr_cursor.fetchone()
+                        if addr_row:
+                            addr_data = json.loads(addr_row[0])
+                            addr_data["id"] = addr_id
+                            addresses.append(mapper.map_address(addr_data))
+                
+                location = mapper.map_location(loc_data, addresses=addresses)
+        
+        sal = mapper.map_service_at_location(sal_data, location=location)
+        service_at_locations.append(sal)
     
-    # Fetch funding
-    funding = []
-    funding_ids = fields.get("funding", [])
-    if funding_ids:
-        funding_records = await client.get_linked_records("funding", funding_ids)
-        funding = [mapper.map_funding(r.get("fields", {})) for r in funding_records]
+    # Get phones linked to service
+    phones = []
+    phone_ids = data.get("phones", [])
+    for phone_id in phone_ids[:5]:  # Limit to 5
+        cursor = await db.execute(
+            "SELECT data FROM phones WHERE id = ? OR airtable_id = ?",
+            [phone_id, phone_id]
+        )
+        phone_row = await cursor.fetchone()
+        if phone_row:
+            phone_data = json.loads(phone_row[0])
+            phone_data["id"] = phone_id
+            phones.append(mapper.map_phone(phone_data))
     
-    # Fetch cost options
-    cost_options = []
-    cost_ids = fields.get("cost_options", [])
-    if cost_ids:
-        cost_records = await client.get_linked_records("cost_option", cost_ids)
-        cost_options = [mapper.map_cost_option(r.get("fields", {})) for r in cost_records]
+    # Get contacts
+    contacts = []
+    contact_ids = data.get("contacts", [])
+    for contact_id in contact_ids[:5]:
+        cursor = await db.execute(
+            "SELECT data FROM contacts WHERE id = ? OR airtable_id = ?",
+            [contact_id, contact_id]
+        )
+        contact_row = await cursor.fetchone()
+        if contact_row:
+            contact_data = json.loads(contact_row[0])
+            contact_data["id"] = contact_id
+            contacts.append(mapper.map_contact(contact_data))
     
-    # Fetch required documents
-    required_documents = []
-    doc_ids = fields.get("required_documents", [])
-    if doc_ids:
-        doc_records = await client.get_linked_records("required_document", doc_ids)
-        required_documents = [mapper.map_required_document(r.get("fields", {})) for r in doc_records]
+    # Get languages
+    languages = []
+    lang_ids = data.get("languages", [])
+    for lang_id in lang_ids[:10]:
+        cursor = await db.execute(
+            "SELECT data FROM languages WHERE id = ? OR airtable_id = ?",
+            [lang_id, lang_id]
+        )
+        lang_row = await cursor.fetchone()
+        if lang_row:
+            lang_data = json.loads(lang_row[0])
+            lang_data["id"] = lang_id
+            languages.append(mapper.map_language(lang_data))
     
-    # Get organization_id (ORUK required field)
-    org_id = org_ids[0] if org_ids else "unknown"
-    
+    # Map the full service
     return mapper.map_service(
-        fields,
+        data,
         organization_id=org_id,
-        organization=org_summary,
-        program=program,
+        organization=organization,
         phones=phones,
         contacts=contacts,
-        schedules=schedules,
-        service_areas=service_areas,
-        service_at_locations=service_at_locations,
         languages=languages,
-        funding=funding,
-        cost_options=cost_options,
-        required_documents=required_documents,
+        service_at_locations=service_at_locations,
     )

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 from models.hsds import Organization, Page
 from airtable.client import get_airtable_client
 from transform.mapper import HSDSMapper
+from config import get_settings
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
@@ -29,9 +30,25 @@ async def list_organizations(
     """
     client = get_airtable_client()
     mapper = HSDSMapper()
+    settings = get_settings()
     
     # Fetch organizations from Airtable
     records = await client.list_records("organizations")
+    
+    # Get published services to: 1) filter orgs, 2) count services per org
+    org_service_counts = {}
+    orgs_with_published_services = set()
+    
+    if settings.published_status_value:
+        filter_formula = f"{{status}}='{settings.published_status_value}'"
+        published_services = await client.list_records("services", filter_formula=filter_formula)
+        
+        # Count services per organization (using 'organizations' field - it's plural in Airtable)
+        for svc in published_services:
+            org_ids = svc.get("fields", {}).get("organizations", [])
+            for org_id in org_ids:
+                orgs_with_published_services.add(org_id)
+                org_service_counts[org_id] = org_service_counts.get(org_id, 0) + 1
     
     # Apply search filter locally
     if search:
@@ -46,16 +63,67 @@ async def list_organizations(
     organizations = []
     for record in records:
         fields = record.get("fields", {})
+        airtable_id = record["id"]
+        
+        # Skip if org has no published services (when filtering enabled)
+        if settings.filter_orgs_without_published_services and settings.published_status_value:
+            if airtable_id not in orgs_with_published_services:
+                continue
         
         if full:
-            org = await _get_full_organization(record["id"], fields, mapper, client)
-            organizations.append(org.model_dump())
+            org = await _get_full_organization(airtable_id, fields, mapper, client)
+            org_dict = org.model_dump()
         else:
             # Return organization summary
             summary = mapper.map_organization_summary(fields)
-            organizations.append(summary.model_dump())
+            org_dict = summary.model_dump()
+        
+        # Add service count to response
+        org_dict["service_count"] = org_service_counts.get(airtable_id, 0)
+        organizations.append(org_dict)
+    
+    # Sort by service count (most services first)
+    organizations.sort(key=lambda x: x.get("service_count", 0), reverse=True)
     
     return mapper.paginate(organizations, page, per_page)
+
+
+@router.get("/{organization_id}/services", response_model=Page)
+async def get_organization_services(
+    organization_id: str,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(20, ge=1, le=100, description="Results per page"),
+):
+    """
+    Get services for a specific organization.
+    
+    Returns services that are linked to this organization via Airtable's 'organizations' field.
+    """
+    client = get_airtable_client()
+    mapper = HSDSMapper()
+    settings = get_settings()
+    
+    # Get published services
+    filter_formula = None
+    if settings.published_status_value:
+        filter_formula = f"{{status}}='{settings.published_status_value}'"
+    
+    all_services = await client.list_records("services", filter_formula=filter_formula)
+    
+    # Filter to services that have this org in their organizations list
+    matching_services = []
+    for svc in all_services:
+        fields = svc.get("fields", {})
+        org_ids = fields.get("organizations", [])
+        if organization_id in org_ids:
+            # Map to service summary
+            summary = mapper.map_service_summary(
+                fields,
+                organization_id=organization_id,
+            )
+            matching_services.append(summary.model_dump())
+    
+    return mapper.paginate(matching_services, page, per_page)
 
 
 @router.get("/{organization_id}", response_model=Organization)
@@ -82,8 +150,12 @@ async def get_organization(
     
     record = records[0]
     fields = record.get("fields", {})
+    airtable_id = record["id"]
     
-    return await _get_full_organization(record["id"], fields, mapper, client)
+    # Note: We don't filter orgs on the detail page - if org exists, show it
+    # The list page already filters to only orgs with published services
+    
+    return await _get_full_organization(airtable_id, fields, mapper, client)
 
 
 async def _get_full_organization(

@@ -339,6 +339,11 @@ class Service(ORUKBaseModel):
     funding: Optional[List[Funding]] = None
     cost_options: Optional[List[CostOption]] = None
     required_documents: Optional[List[RequiredDocument]] = None
+    
+    # Custom extension fields (non-HSDS standard)
+    group_name: Optional[str] = None  # Organization/group name from Airtable
+    need_focus: Optional[List[str]] = None  # Need categories
+    community_focus: Optional[List[str]] = None  # Target communities
 
 
 class ServiceSummary(ORUKBaseModel):
@@ -354,6 +359,9 @@ class ServiceSummary(ORUKBaseModel):
     last_modified: Optional[str] = None
     organization: Optional[OrganizationSummary] = None
     program: Optional[Program] = None
+    # Taxonomy fields for category filtering
+    need_focus: Optional[List[str]] = None
+    community_focus: Optional[List[str]] = None
 
 
 # ============================================================================

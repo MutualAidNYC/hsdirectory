@@ -343,6 +343,9 @@ class HSDSMapper:
             last_modified=data.get("lastUpdated"),
             organization=organization,
             program=program,
+            # Taxonomy fields from Airtable (camelCase in Airtable)
+            need_focus=data.get("needFocus") or [],
+            community_focus=data.get("communityFocus") or [],
         )
     
     def map_service(
@@ -362,6 +365,10 @@ class HSDSMapper:
         required_documents: List[RequiredDocument] = None,
     ) -> Service:
         """Map Airtable service record to full HSDS Service (ORUK compliant)."""
+        # Extract group name from Airtable's groupName field (lookup field returns list)
+        group_name_list = data.get("groupName", [])
+        group_name = group_name_list[0] if group_name_list else None
+        
         return Service(
             id=data.get("id", ""),
             organization_id=organization_id,  # Required by ORUK
@@ -393,6 +400,10 @@ class HSDSMapper:
             funding=funding,
             cost_options=cost_options,
             required_documents=required_documents,
+            # Custom extension fields
+            group_name=group_name,
+            need_focus=data.get("needFocus"),
+            community_focus=data.get("communityFocus"),
         )
     
     @staticmethod

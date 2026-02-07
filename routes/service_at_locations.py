@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 from models.hsds import ServiceAtLocation, Page
 from airtable.client import get_airtable_client
 from transform.mapper import HSDSMapper
+from config import get_settings
 
 router = APIRouter(prefix="/service_at_locations", tags=["service_at_locations"])
 
@@ -32,13 +33,27 @@ async def list_service_at_locations(
     """
     client = get_airtable_client()
     mapper = HSDSMapper()
+    settings = get_settings()
     
     records = await client.list_records("service_at_location")
+    
+    # If filtering by published status, get IDs of published services
+    published_service_ids = None
+    if settings.published_status_value:
+        filter_formula = f"{{status}}='{settings.published_status_value}'"
+        published_services = await client.list_records("services", filter_formula=filter_formula)
+        published_service_ids = set(svc["id"] for svc in published_services)
     
     # Map to HSDS models
     results = []
     for record in records:
         fields = record.get("fields", {})
+        
+        # Skip if service is not published
+        if published_service_ids is not None:
+            service_ids = fields.get("services", [])
+            if not any(sid in published_service_ids for sid in service_ids):
+                continue
         
         if full:
             sal = await _get_full_service_at_location(record["id"], fields, mapper, client)

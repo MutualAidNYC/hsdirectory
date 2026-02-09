@@ -26,9 +26,6 @@ export function Footer() {
                         <Link href="/organizations" className="hover:text-gray-900 dark:hover:text-white">
                             Organizations
                         </Link>
-                        <Link href="/map" className="hover:text-gray-900 dark:hover:text-white">
-                            Map
-                        </Link>
                     </nav>
 
                     {/* Attribution */}

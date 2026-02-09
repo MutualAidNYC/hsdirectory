@@ -144,7 +144,7 @@ export default async function Home() {
             </Link>
 
             <Link
-              href="/map"
+              href="/services"
               className="group flex items-center gap-4 p-6 rounded-xl bg-white dark:bg-gray-800 
                 border border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md transition-all"
             >
@@ -186,7 +186,7 @@ export default async function Home() {
               {categories.map((category, index) => (
                 <Link
                   key={category}
-                  href={`/map?category=${encodeURIComponent(category)}`}
+                  href={`/services?category=${encodeURIComponent(category)}`}
                   className="group flex flex-col items-center p-6 rounded-xl bg-white dark:bg-gray-800 
                     border border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md transition-all"
                 >

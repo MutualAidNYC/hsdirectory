@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -15,28 +15,46 @@ interface MapLocation {
 
 interface MapViewProps {
     locations: MapLocation[];
+    /** ID of the currently highlighted service (e.g. from card hover). */
+    highlightedId?: string | null;
 }
 
+/** Default and highlighted pin styles. */
+const PIN_DEFAULT = `
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border: 3px solid white; border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    z-index: 1;
+`;
+const PIN_HIGHLIGHTED = `
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: 3px solid white; border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(245,158,11,0.6);
+    transition: all 0.2s ease;
+    z-index: 10;
+`;
+
 /**
- * Interactive map component using MapLibre GL with OpenStreetMap tiles.
- *
- * Uses OSM raster tiles for a full-featured, real-world map layer.
- * Displays service locations with clickable markers and popups.
+ * Interactive map using MapLibre GL with OpenStreetMap tiles.
+ * Supports highlighting a specific pin and flying to it.
  */
-export default function MapView({ locations }: MapViewProps) {
+export default function MapView({ locations, highlightedId }: MapViewProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
-    const map = useRef<maplibregl.Map | null>(null);
+    const mapRef = useRef<maplibregl.Map | null>(null);
+    const markersRef = useRef<Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>>(new Map());
 
+    // Initialize map once
     useEffect(() => {
-        if (!mapContainer.current || map.current) return;
+        if (!mapContainer.current || mapRef.current) return;
 
-        // Calculate bounds to fit all markers
         const bounds = new maplibregl.LngLatBounds();
-        locations.forEach(loc => {
-            bounds.extend([loc.longitude, loc.latitude]);
-        });
+        locations.forEach(loc => bounds.extend([loc.longitude, loc.latitude]));
 
-        // OpenStreetMap raster tile style definition
         const osmStyle: maplibregl.StyleSpecification = {
             version: 8,
             sources: {
@@ -47,63 +65,51 @@ export default function MapView({ locations }: MapViewProps) {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 },
             },
-            layers: [
-                {
-                    id: 'osm-tiles',
-                    type: 'raster',
-                    source: 'osm',
-                    minzoom: 0,
-                    maxzoom: 19,
-                },
-            ],
+            layers: [{
+                id: 'osm-tiles',
+                type: 'raster',
+                source: 'osm',
+                minzoom: 0,
+                maxzoom: 19,
+            }],
         };
 
-        // Initialize map
-        map.current = new maplibregl.Map({
+        mapRef.current = new maplibregl.Map({
             container: mapContainer.current,
             style: osmStyle,
             center: locations.length > 0
                 ? [bounds.getCenter().lng, bounds.getCenter().lat]
-                : [-74.006, 40.7128], // Default to NYC
+                : [-74.006, 40.7128],
             zoom: 10,
         });
 
-        // Add navigation controls
-        map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+        mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        // Fit bounds if we have locations
         if (locations.length > 0) {
-            map.current.fitBounds(bounds, {
-                padding: 50,
-                maxZoom: 14,
-            });
+            mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14 });
         }
 
-        // Add markers
+        // Create markers and store refs
+        const markerMap = new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>();
+
         locations.forEach(loc => {
-            // Create marker element
             const el = document.createElement('div');
             el.className = 'marker';
-            el.style.cssText = `
-                width: 28px;
-                height: 28px;
-                background: linear-gradient(135deg, #2563eb, #1d4ed8);
-                border: 3px solid white;
-                border-radius: 50%;
-                cursor: pointer;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                transition: box-shadow 0.15s ease, border-width 0.15s ease;
-            `;
+            el.style.cssText = PIN_DEFAULT;
+
             el.addEventListener('mouseenter', () => {
-                el.style.boxShadow = '0 4px 12px rgba(37,99,235,0.5)';
-                el.style.borderWidth = '4px';
+                if (el.dataset.highlighted !== 'true') {
+                    el.style.boxShadow = '0 4px 12px rgba(37,99,235,0.5)';
+                    el.style.borderWidth = '4px';
+                }
             });
             el.addEventListener('mouseleave', () => {
-                el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                el.style.borderWidth = '3px';
+                if (el.dataset.highlighted !== 'true') {
+                    el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                    el.style.borderWidth = '3px';
+                }
             });
 
-            // Create popup
             const popupContent = `
                 <div style="padding: 8px; max-width: 220px;">
                     <h4 style="font-weight: 600; margin-bottom: 4px; color: #111; font-size: 14px;">
@@ -125,22 +131,59 @@ export default function MapView({ locations }: MapViewProps) {
                 </div>
             `;
 
-            const popup = new maplibregl.Popup({ offset: 25 })
-                .setHTML(popupContent);
-
-            // Add marker to map
-            new maplibregl.Marker({ element: el })
+            const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent);
+            const marker = new maplibregl.Marker({ element: el })
                 .setLngLat([loc.longitude, loc.latitude])
                 .setPopup(popup)
-                .addTo(map.current!);
+                .addTo(mapRef.current!);
+
+            markerMap.set(loc.serviceId || loc.id, { marker, el });
         });
 
-        // Cleanup
+        markersRef.current = markerMap;
+
         return () => {
-            map.current?.remove();
-            map.current = null;
+            mapRef.current?.remove();
+            mapRef.current = null;
+            markersRef.current.clear();
         };
     }, [locations]);
+
+    // React to highlight changes — style the pin and fly to it
+    useEffect(() => {
+        const markers = markersRef.current;
+
+        // Reset all pins to default
+        markers.forEach(({ el }) => {
+            el.style.cssText = PIN_DEFAULT;
+            el.dataset.highlighted = 'false';
+        });
+
+        if (!highlightedId || !mapRef.current) return;
+
+        const entry = markers.get(highlightedId);
+        if (!entry) {
+            // No pin for this card — fit bounds to show all pins
+            const bounds = new maplibregl.LngLatBounds();
+            markers.forEach(({ marker }) => bounds.extend(marker.getLngLat()));
+            if (!bounds.isEmpty()) {
+                mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14, duration: 800 });
+            }
+            return;
+        }
+
+        // Highlight the pin
+        entry.el.style.cssText = PIN_HIGHLIGHTED;
+        entry.el.dataset.highlighted = 'true';
+
+        // Fly to the highlighted pin
+        const lngLat = entry.marker.getLngLat();
+        mapRef.current.flyTo({
+            center: [lngLat.lng, lngLat.lat],
+            zoom: Math.max(mapRef.current.getZoom(), 14),
+            duration: 800,
+        });
+    }, [highlightedId]);
 
     return (
         <div

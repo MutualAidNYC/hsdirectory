@@ -171,7 +171,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                     {service.need_focus.map((need: string, index: number) => (
                                         <Link
                                             key={`need-${index}`}
-                                            href={`/map?category=${encodeURIComponent(need)}`}
+                                            href={`/services?category=${encodeURIComponent(need)}`}
                                             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                                         >
                                             {need}
@@ -191,7 +191,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                     {service.community_focus.map((community: string, index: number) => (
                                         <Link
                                             key={`community-${index}`}
-                                            href={`/map?community=${encodeURIComponent(community)}`}
+                                            href={`/services?community=${encodeURIComponent(community)}`}
                                             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
                                         >
                                             {community}
@@ -333,7 +333,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
 
                         {/* Back Button */}
                         <Link
-                            href="/map"
+                            href="/services"
                             className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg 
                 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300
                 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

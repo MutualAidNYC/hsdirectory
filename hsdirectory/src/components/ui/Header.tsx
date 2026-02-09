@@ -44,12 +44,6 @@ export function Header({ showSearch = true }: HeaderProps) {
                     >
                         Organizations
                     </Link>
-                    <Link
-                        href="/map"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
-                    >
-                        Map
-                    </Link>
                 </nav>
             </div>
         </header>

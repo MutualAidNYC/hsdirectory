@@ -10,8 +10,9 @@ interface SearchBarProps {
 }
 
 /**
- * Reusable search bar component for filtering services.
- * Navigates to /services with search query on submit.
+ * Reusable search bar with optional geolocation.
+ * The location pin icon requests browser geolocation and passes
+ * lat/lng to the map page so proximity sorting activates automatically.
  */
 export function SearchBar({
     initialQuery = '',
@@ -19,20 +20,48 @@ export function SearchBar({
     placeholder = 'Search for services...'
 }: SearchBarProps) {
     const [query, setQuery] = useState(initialQuery);
+    const [locating, setLocating] = useState(false);
     const router = useRouter();
+
+    /** Build the /services URL with current query and optional lat/lng. */
+    const buildUrl = (q: string, coords?: { lat: number; lng: number }) => {
+        const params = new URLSearchParams();
+        if (q.trim()) params.set('q', q.trim());
+        if (coords) {
+            params.set('lat', coords.lat.toFixed(6));
+            params.set('lng', coords.lng.toFixed(6));
+        }
+        const qs = params.toString();
+        return qs ? `/services?${qs}` : '/services';
+    };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (query.trim()) {
-            router.push(`/map?q=${encodeURIComponent(query.trim())}`);
-        } else {
-            router.push('/map');
-        }
+        router.push(buildUrl(query));
+    };
+
+    /** Get geolocation then navigate to map with lat/lng in URL. */
+    const handleLocationSearch = () => {
+        if (!navigator.geolocation) return;
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setLocating(false);
+                router.push(buildUrl(query, {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                }));
+            },
+            () => setLocating(false),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     };
 
     const inputClasses = size === 'lg'
-        ? 'h-14 text-lg px-6'
-        : 'h-10 text-sm px-4';
+        ? 'h-14 text-lg pl-6 pr-28'
+        : 'h-10 text-sm pl-4 pr-24';
+
+    const btnPadding = size === 'lg' ? 'px-5 py-2' : 'px-3 py-1.5 text-sm';
 
     return (
         <form onSubmit={handleSubmit} className="w-full max-w-2xl">
@@ -47,14 +76,30 @@ export function SearchBar({
             dark:border-gray-600 dark:bg-gray-800 dark:text-white
             ${inputClasses}`}
                 />
-                <button
-                    type="submit"
-                    className={`absolute right-2 rounded-full bg-blue-600 text-white 
+                <div className="absolute right-2 flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={handleLocationSearch}
+                        disabled={locating}
+                        title="Search near my location"
+                        className={`rounded-full p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-gray-400 dark:hover:text-blue-400 transition-colors disabled:opacity-50 ${locating ? 'animate-pulse' : ''}`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </button>
+                    <button
+                        type="submit"
+                        className={`rounded-full bg-blue-600 text-white 
             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
-            transition-colors ${size === 'lg' ? 'px-6 py-2' : 'px-4 py-1.5 text-sm'}`}
-                >
-                    Search
-                </button>
+            transition-colors ${btnPadding}`}
+                    >
+                        Search
+                    </button>
+                </div>
             </div>
         </form>
     );

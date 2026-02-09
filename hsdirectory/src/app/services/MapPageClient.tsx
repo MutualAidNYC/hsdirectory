@@ -26,6 +26,17 @@ function extractBorough(address?: string): string | null {
     return null;
 }
 
+/** Haversine distance in miles between two lat/lng points. */
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 3958.8; // Earth radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 interface Service {
     id: string;
     name: string;
@@ -50,7 +61,7 @@ interface MapPageClientProps {
  *
  * Reads initial filter state from URL query params (?category=, ?community=)
  * and pushes URL updates when the user changes filters, enabling sharable
- * filtered views like /map?category=Housing.
+ * filtered views like /services?category=Housing.
  */
 export default function MapPageClient({
     services,
@@ -74,9 +85,18 @@ export default function MapPageClient({
         searchParams.get('borough') || ''
     );
 
+    // Initialize user location from URL params (set by SearchBar location button)
+    const initLat = searchParams.get('lat');
+    const initLng = searchParams.get('lng');
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
+        (initLat && initLng) ? { lat: parseFloat(initLat), lng: parseFloat(initLng) } : null
+    );
+    const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+    const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
+
     /**
      * Push filter state into the browser URL so that filtered views are
-     * bookmarkable and sharable (e.g. /map?category=Housing&q=food&borough=Brooklyn).
+     * bookmarkable and sharable (e.g. /services?category=Housing&q=food&borough=Brooklyn).
      */
     const syncUrl = useCallback((query: string, need: string, community: string, borough: string) => {
         const params = new URLSearchParams();
@@ -85,7 +105,7 @@ export default function MapPageClient({
         if (community) params.set('community', community);
         if (borough) params.set('borough', borough);
         const qs = params.toString();
-        router.replace(qs ? `/map?${qs}` : '/map', { scroll: false });
+        router.replace(qs ? `/services?${qs}` : '/services', { scroll: false });
     }, [router]);
 
     // Handle search submit
@@ -112,12 +132,36 @@ export default function MapPageClient({
         syncUrl(searchQuery, selectedNeed, selectedCommunity, value);
     };
 
+    // Request browser geolocation
+    const handleUseLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationStatus('error');
+            return;
+        }
+        setLocationStatus('loading');
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setLocationStatus('idle');
+            },
+            () => setLocationStatus('error'),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    const handleClearLocation = () => {
+        setUserLocation(null);
+        setLocationStatus('idle');
+    };
+
     // Clear all filters
     const handleClearFilters = () => {
         setSearchQuery('');
         setSelectedNeed('');
         setSelectedCommunity('');
         setSelectedBorough('');
+        setUserLocation(null);
+        setLocationStatus('idle');
         syncUrl('', '', '', '');
     };
 
@@ -163,11 +207,27 @@ export default function MapPageClient({
             return { service, score };
         });
 
-        return scored
-            .filter((s): s is { service: Service; score: number } => s !== null)
-            .sort((a, b) => b.score - a.score)
-            .map(s => s.service);
-    }, [services, searchQuery, selectedNeed, selectedCommunity, selectedBorough]);
+        const results = scored
+            .filter((s): s is { service: Service; score: number } => s !== null);
+
+        // Sort by distance if location is active, otherwise by relevance score
+        if (userLocation) {
+            results.sort((a, b) => {
+                const distA = (a.service.latitude && a.service.longitude)
+                    ? haversineDistance(userLocation.lat, userLocation.lng, a.service.latitude, a.service.longitude)
+                    : Infinity;
+                const distB = (b.service.latitude && b.service.longitude)
+                    ? haversineDistance(userLocation.lat, userLocation.lng, b.service.latitude, b.service.longitude)
+                    : Infinity;
+                if (distA !== distB) return distA - distB;
+                return b.score - a.score; // tie-break by relevance
+            });
+        } else {
+            results.sort((a, b) => b.score - a.score);
+        }
+
+        return results.map(s => s.service);
+    }, [services, searchQuery, selectedNeed, selectedCommunity, selectedBorough, userLocation]);
 
     // Get locations for map
     const mapLocations = useMemo(() => {
@@ -184,9 +244,9 @@ export default function MapPageClient({
     }, [filteredServices]);
 
     return (
-        <div className="flex h-[calc(100vh-80px)] overflow-hidden">
+        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
             {/* Left Column: Filters */}
-            <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+            <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto scrollbar-thin">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Filters
                 </h2>
@@ -208,6 +268,38 @@ export default function MapPageClient({
                             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </form>
+                </div>
+
+                {/* Use My Location */}
+                <div className="mb-6">
+                    {!userLocation ? (
+                        <button
+                            onClick={handleUseLocation}
+                            disabled={locationStatus === 'loading'}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {locationStatus === 'loading' ? 'Locating...' : 'Use My Location'}
+                        </button>
+                    ) : (
+                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                            <span className="text-sm text-green-700 dark:text-green-400 font-medium">📍 Sorting by distance</span>
+                            <button
+                                onClick={handleClearLocation}
+                                className="text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
+                    {locationStatus === 'error' && (
+                        <p className="text-xs text-red-500 mt-1">Location access denied or unavailable.</p>
+                    )}
                 </div>
 
                 {/* Need Category Filter */}
@@ -278,7 +370,7 @@ export default function MapPageClient({
             </div>
 
             {/* Middle Column: Service Cards */}
-            <div className="w-[32rem] flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+            <div className="w-[32rem] flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto scrollbar-thin">
                 <div className="p-4 space-y-4">
                     {filteredServices.length === 0 ? (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -286,15 +378,22 @@ export default function MapPageClient({
                         </div>
                     ) : (
                         filteredServices.map(service => (
-                            <ServiceCard key={service.id} service={service} />
+                            <ServiceCard
+                                key={service.id}
+                                service={service}
+                                userLocation={userLocation}
+                                onHover={setHoveredServiceId}
+                            />
                         ))
                     )}
                 </div>
             </div>
 
             {/* Right Column: Map */}
-            <div className="flex-1 relative h-full min-w-0">
-                <MapViewDynamic locations={mapLocations} />
+            <div className="flex-1 relative h-full min-w-0 p-2">
+                <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                    <MapViewDynamic locations={mapLocations} highlightedId={hoveredServiceId} />
+                </div>
             </div>
         </div>
     );
@@ -303,12 +402,31 @@ export default function MapPageClient({
 /**
  * Service card component
  */
-function ServiceCard({ service }: { service: Service }) {
+function ServiceCard({ service, userLocation, onHover }: {
+    service: Service;
+    userLocation: { lat: number; lng: number } | null;
+    onHover: (id: string | null) => void;
+}) {
+    const distance = (userLocation && service.latitude && service.longitude)
+        ? haversineDistance(userLocation.lat, userLocation.lng, service.latitude, service.longitude)
+        : null;
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                {service.name}
-            </h3>
+        <div
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer"
+            onMouseEnter={() => onHover(service.id)}
+            onMouseLeave={() => onHover(null)}
+        >
+            <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                    {service.name}
+                </h3>
+                {distance !== null && (
+                    <span className="flex-shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {distance < 0.1 ? '< 0.1' : distance.toFixed(1)} mi
+                    </span>
+                )}
+            </div>
 
             {service.address && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 flex items-start gap-2">

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getOrganizations, Organization } from "@/lib/api";
 import { OrganizationCard } from "@/components/organizations/OrganizationCard";
 import { Pagination } from "@/components/ui/Pagination";
+import { OrgSearch } from "./OrgSearch";
 
 export const metadata: Metadata = {
     title: "Organizations",
@@ -9,15 +10,17 @@ export const metadata: Metadata = {
 };
 
 interface OrganizationsPageProps {
-    searchParams: Promise<{ page?: string }>;
+    searchParams: Promise<{ page?: string; q?: string }>;
 }
 
 /**
- * Organizations listing page with pagination.
+ * Organizations listing page with search and pagination.
+ * The `q` param drives server-side text search against the API.
  */
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
     const params = await searchParams;
     const page = parseInt(params.page || "1");
+    const query = params.q || "";
 
     let organizations: Organization[] = [];
     let totalPages = 1;
@@ -25,7 +28,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
     let error = null;
 
     try {
-        const response = await getOrganizations(page, 12);
+        const response = await getOrganizations(page, 12, query || undefined);
         organizations = response.contents || [];
         totalPages = response.total_pages || 1;
         totalItems = response.total_items || 0;
@@ -33,6 +36,9 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         error = e instanceof Error ? e.message : "Failed to load organizations";
         console.error("Failed to fetch organizations:", e);
     }
+
+    // Build pagination URL preserving search query
+    const paginationBase = query ? `/organizations?q=${encodeURIComponent(query)}` : "/organizations";
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -44,6 +50,11 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                 <p className="text-gray-600 dark:text-gray-400">
                     {totalItems.toLocaleString()} organizations providing community services
                 </p>
+            </div>
+
+            {/* Search Input */}
+            <div className="mb-8">
+                <OrgSearch initialQuery={query} />
             </div>
 
             {/* Error State */}
@@ -69,17 +80,17 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                         </svg>
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        No organizations found
+                        {query ? `No results for "${query}"` : "No organizations found"}
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400">
-                        No organizations are currently available.
+                        {query ? "Try a different search term." : "No organizations are currently available."}
                     </p>
                 </div>
             ) : null}
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <Pagination currentPage={page} totalPages={totalPages} baseUrl="/organizations" />
+                <Pagination currentPage={page} totalPages={totalPages} baseUrl={paginationBase} />
             )}
         </div>
     );

@@ -144,10 +144,12 @@ export async function getService(id: string): Promise<Service> {
 }
 
 /**
- * Fetch paginated list of organizations
+ * Fetch paginated list of organizations, with optional text search.
  */
-export async function getOrganizations(page: number = 1, size: number = 20): Promise<PaginatedResponse<Organization>> {
-    return fetchApi<PaginatedResponse<Organization>>(`/organizations?page=${page}&per_page=${size}`);
+export async function getOrganizations(page: number = 1, size: number = 20, search?: string): Promise<PaginatedResponse<Organization>> {
+    let url = `/organizations?page=${page}&per_page=${size}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    return fetchApi<PaginatedResponse<Organization>>(url);
 }
 
 /**

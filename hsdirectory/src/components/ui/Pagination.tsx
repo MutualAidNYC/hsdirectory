@@ -58,13 +58,13 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
                 <Link
                     href={buildUrl(currentPage - 1)}
                     className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-            text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            text-[var(--foreground)] opacity-70 hover:bg-[var(--section-alt)] hover:opacity-100"
                 >
                     Previous
                 </Link>
             ) : (
                 <span className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-          text-gray-300 dark:text-gray-600 cursor-not-allowed">
+          text-[var(--muted)] opacity-40 cursor-not-allowed">
                     Previous
                 </span>
             )}
@@ -73,15 +73,15 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
             <div className="flex items-center gap-1">
                 {getPageNumbers().map((page, idx) =>
                     page === 'ellipsis' ? (
-                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">...</span>
+                        <span key={`ellipsis-${idx}`} className="px-2 text-[var(--muted)]">...</span>
                     ) : (
                         <Link
                             key={page}
                             href={buildUrl(page)}
                             className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors
                 ${currentPage === page
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                                    ? 'bg-[var(--primary)] text-white'
+                                    : 'text-[var(--foreground)] opacity-70 hover:bg-[var(--section-alt)] hover:opacity-100'
                                 }`}
                         >
                             {page}
@@ -95,13 +95,13 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
                 <Link
                     href={buildUrl(currentPage + 1)}
                     className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-            text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            text-[var(--foreground)] opacity-70 hover:bg-[var(--section-alt)] hover:opacity-100"
                 >
                     Next
                 </Link>
             ) : (
                 <span className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-          text-gray-300 dark:text-gray-600 cursor-not-allowed">
+          text-[var(--muted)] opacity-40 cursor-not-allowed">
                     Next
                 </span>
             )}

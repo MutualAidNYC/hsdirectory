@@ -33,7 +33,7 @@ export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
     return (
         <form onSubmit={handleSubmit} className="max-w-xl">
             <div className="relative flex items-center">
-                <svg className="absolute left-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3 w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -42,14 +42,14 @@ export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search organizations by name..."
-                    className="w-full pl-10 pr-24 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full pl-10 pr-24 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                 />
                 <div className="absolute right-2 flex items-center gap-1">
                     {query && (
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            className="p-1.5 text-[var(--muted)] hover:text-[var(--foreground)]"
                             title="Clear search"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,7 +59,7 @@ export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
                     )}
                     <button
                         type="submit"
-                        className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                        className="px-4 py-1.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary-hover)] transition-colors"
                     >
                         Search
                     </button>

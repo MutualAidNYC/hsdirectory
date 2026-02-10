@@ -81,20 +81,20 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         <div className="container mx-auto px-4 py-8">
             {/* Breadcrumb */}
             <nav className="mb-6 text-sm">
-                <ol className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <ol className="flex items-center gap-2 text-[var(--muted)]">
                     <li>
-                        <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300">
+                        <Link href="/" className="hover:text-[var(--foreground)]">
                             Home
                         </Link>
                     </li>
                     <li>/</li>
                     <li>
-                        <Link href="/organizations" className="hover:text-gray-700 dark:hover:text-gray-300">
+                        <Link href="/organizations" className="hover:text-[var(--foreground)]">
                             Organizations
                         </Link>
                     </li>
                     <li>/</li>
-                    <li className="text-gray-900 dark:text-white font-medium truncate">
+                    <li className="text-[var(--foreground)] font-medium truncate">
                         {organization.name}
                     </li>
                 </ol>
@@ -105,15 +105,15 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                 {/* Left Column - Organization Info and Services */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Organization Header */}
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+                    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6">
                         {/* Name */}
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                        <h1 className="font-display text-3xl font-bold text-[var(--foreground)] mb-4">
                             {organization.name}
                         </h1>
 
                         {/* Description */}
                         {organization.description && (
-                            <p className="text-gray-600 dark:text-gray-300 text-lg mb-6 whitespace-pre-wrap">
+                            <p className="text-[var(--muted)] text-lg mb-6 whitespace-pre-wrap">
                                 {organization.description}
                             </p>
                         )}
@@ -125,7 +125,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                                     href={organization.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-3 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                    className="flex items-center gap-3 text-[var(--primary)] hover:text-[var(--primary-hover)]"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -137,7 +137,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                             {organization.email && (
                                 <a
                                     href={`mailto:${organization.email}`}
-                                    className="flex items-center gap-3 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                                    className="flex items-center gap-3 text-[var(--muted)] hover:text-[var(--foreground)]"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -151,7 +151,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
                     {/* Services Section */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                        <h2 className="font-display text-2xl font-bold text-[var(--foreground)] mb-6">
                             Services ({relatedServices.length})
                         </h2>
 
@@ -162,8 +162,8 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                                <p className="text-gray-500 dark:text-gray-400">
+                            <div className="text-center py-12 bg-[var(--section-alt)] rounded-xl">
+                                <p className="text-[var(--muted)]">
                                     No services listed for this organization yet.
                                 </p>
                             </div>
@@ -175,23 +175,23 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                 <div className="lg:col-span-1">
                     <div className="sticky top-24 space-y-6">
                         {mapLocations.length > 0 ? (
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
+                                <div className="p-4 border-b border-[var(--card-border)]">
+                                    <h3 className="font-semibold text-[var(--foreground)]">
                                         Service Locations ({mapLocations.length})
                                     </h3>
                                 </div>
                                 <OrgLocationsMap locations={mapLocations} />
                             </div>
                         ) : (
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-8 text-center">
-                                <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--section-alt)] p-8 text-center">
+                                <svg className="w-12 h-12 mx-auto text-[var(--muted)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <p className="text-gray-500 dark:text-gray-400">
+                                <p className="text-[var(--muted)]">
                                     No location data available
                                 </p>
                             </div>
@@ -200,9 +200,9 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                         {/* Back Button */}
                         <Link
                             href="/organizations"
-                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg
-                border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300
-                hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl
+                border border-[var(--card-border)] text-[var(--foreground)] opacity-70
+                hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

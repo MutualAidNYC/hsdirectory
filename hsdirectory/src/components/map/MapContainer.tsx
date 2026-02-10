@@ -19,8 +19,8 @@ interface MapContainerProps {
 const MapView = dynamic(() => import('./MapView'), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-            <div className="text-gray-500 dark:text-gray-400">Loading map...</div>
+        <div className="w-full h-[600px] bg-[var(--section-alt)] rounded-xl flex items-center justify-center">
+            <div className="text-[var(--muted)]">Loading map...</div>
         </div>
     ),
 });

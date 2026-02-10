@@ -48,16 +48,17 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
     let mapCoords: { latitude: number; longitude: number; name: string; address?: string } | null = null;
 
     // Source 1: HSDS service_at_locations
-    if (service.service_at_locations?.length > 0) {
-        const locWithCoords = service.service_at_locations.find(
+    if ((service.service_at_locations?.length ?? 0) > 0) {
+        const locWithCoords = service.service_at_locations!.find(
             (sal: any) => sal.location?.latitude && sal.location?.longitude
         );
         if (locWithCoords?.location) {
-            const addr = locWithCoords.location.addresses?.[0];
+            const loc = locWithCoords.location as any;
+            const addr = loc.addresses?.[0];
             mapCoords = {
-                latitude: locWithCoords.location.latitude,
-                longitude: locWithCoords.location.longitude,
-                name: locWithCoords.location.name || service.name,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                name: loc.name || service.name,
                 address: addr
                     ? [addr.address_1, addr.city, addr.state_province, addr.postal_code]
                         .filter(Boolean)
@@ -104,20 +105,20 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
         <div className="container mx-auto px-4 py-8">
             {/* Breadcrumb */}
             <nav className="mb-6 text-sm">
-                <ol className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <ol className="flex items-center gap-2 text-[var(--muted)]">
                     <li>
-                        <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300">
+                        <Link href="/" className="hover:text-[var(--foreground)]">
                             Home
                         </Link>
                     </li>
                     <li>/</li>
                     <li>
-                        <Link href="/services" className="hover:text-gray-700 dark:hover:text-gray-300">
+                        <Link href="/services" className="hover:text-[var(--foreground)]">
                             Services
                         </Link>
                     </li>
                     <li>/</li>
-                    <li className="text-gray-900 dark:text-white font-medium truncate">
+                    <li className="text-[var(--foreground)] font-medium truncate">
                         {service.name}
                     </li>
                 </ol>
@@ -129,14 +130,14 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     {/* Header */}
                     <div>
                         <div className="flex items-start justify-between gap-4 mb-4">
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="font-display text-3xl font-bold text-[var(--foreground)]">
                                 {service.name}
                             </h1>
                             {service.status && (
                                 <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium
                   ${service.status === 'active' || service.status === 'Published'
-                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                        ? 'bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]'
+                                        : 'bg-[var(--section-alt)] text-[var(--muted)]'
                                     }`}
                                 >
                                     {service.status === 'Published' ? 'Active' : service.status}
@@ -146,12 +147,12 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
 
                         {/* Group/Organization Name - linked to org profile */}
                         {(service.group_name || service.organization) && (
-                            <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
+                            <p className="text-lg text-[var(--muted)] mb-4">
                                 <span className="font-medium">Group:</span>{' '}
                                 {resolvedOrgId ? (
                                     <Link
                                         href={`/organizations/${resolvedOrgId}`}
-                                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
+                                        className="text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline"
                                     >
                                         {service.group_name || service.organization?.name}
                                     </Link>
@@ -162,17 +163,17 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         )}
 
                         {/* Service Categories */}
-                        {service.need_focus?.length > 0 && (
+                        {(service.need_focus?.length ?? 0) > 0 && (
                             <div className="mb-4">
-                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+                                <h3 className="text-sm font-semibold text-[var(--foreground)] opacity-70 mb-2 uppercase tracking-wide">
                                     Service Categories
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {service.need_focus.map((need: string, index: number) => (
+                                    {service.need_focus!.map((need: string, index: number) => (
                                         <Link
                                             key={`need-${index}`}
                                             href={`/services?category=${encodeURIComponent(need)}`}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)] hover:opacity-80 transition-opacity"
                                         >
                                             {need}
                                         </Link>
@@ -182,17 +183,17 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         )}
 
                         {/* Community Focus */}
-                        {service.community_focus?.length > 0 && (
+                        {(service.community_focus?.length ?? 0) > 0 && (
                             <div className="mb-4">
-                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+                                <h3 className="text-sm font-semibold text-[var(--foreground)] opacity-70 mb-2 uppercase tracking-wide">
                                     Community Focus
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {service.community_focus.map((community: string, index: number) => (
+                                    {service.community_focus!.map((community: string, index: number) => (
                                         <Link
                                             key={`community-${index}`}
                                             href={`/services?community=${encodeURIComponent(community)}`}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)] hover:opacity-80 transition-opacity"
                                         >
                                             {community}
                                         </Link>
@@ -205,11 +206,11 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     {/* Description */}
                     {service.description && (
                         <section>
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
                                 About This Service
                             </h2>
-                            <div className="prose dark:prose-invert max-w-none">
-                                <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                            <div className="prose max-w-none">
+                                <p className="text-[var(--muted)] whitespace-pre-wrap">
                                     {service.description}
                                 </p>
                             </div>
@@ -217,26 +218,26 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     )}
 
                     {/* Locations */}
-                    {service.service_at_locations?.length > 0 && (
+                    {(service.service_at_locations?.length ?? 0) > 0 && (
                         <section>
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
                                 Locations
                             </h2>
                             <div className="space-y-4">
-                                {service.service_at_locations.map((sal: any) => (
+                                {service.service_at_locations!.map((sal: any) => (
                                     <div
                                         key={sal.id}
-                                        className="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+                                        className="rounded-xl border border-[var(--card-border)] p-4"
                                     >
                                         {sal.location && (
                                             <>
                                                 {sal.location.name && (
-                                                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                                                    <h3 className="font-medium text-[var(--foreground)] mb-2">
                                                         {sal.location.name}
                                                     </h3>
                                                 )}
                                                 {sal.location.addresses?.length > 0 && (
-                                                    <div className="text-gray-600 dark:text-gray-300">
+                                                    <div className="text-[var(--muted)]">
                                                         {sal.location.addresses.map((addr: any) => (
                                                             <p key={addr.id}>
                                                                 {[addr.address_1, addr.address_2, addr.city, addr.state_province, addr.postal_code]
@@ -260,22 +261,22 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     <div className="sticky top-24 space-y-6">
                         {/* Map Card - show if service has geocoded coordinates */}
                         {mapCoords && (
-                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+                            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
                                 <ServiceLocationMap
                                     latitude={mapCoords.latitude}
                                     longitude={mapCoords.longitude}
                                     name={mapCoords.name}
                                 />
                                 {mapCoords.address && (
-                                    <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                    <div className="p-4 border-t border-[var(--card-border)]">
+                                        <p className="text-sm text-[var(--muted)] mb-2">
                                             {mapCoords.address}
                                         </p>
                                         <a
                                             href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapCoords.address)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)]"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -289,8 +290,8 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         )}
 
                         {/* Contact Card */}
-                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6">
+                            <h3 className="font-semibold text-[var(--foreground)] mb-4">
                                 Contact Information
                             </h3>
 
@@ -300,7 +301,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                         href={service.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-3 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                                        className="flex items-center gap-3 text-[var(--primary)] hover:text-[var(--primary-hover)]"
                                     >
                                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -313,7 +314,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 {service.email && (
                                     <a
                                         href={`mailto:${service.email}`}
-                                        className="flex items-center gap-3 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                                        className="flex items-center gap-3 text-[var(--muted)] hover:text-[var(--foreground)]"
                                     >
                                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -324,7 +325,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 )}
 
                                 {!service.url && !service.email && (
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                    <p className="text-[var(--muted)] text-sm">
                                         No contact information available.
                                     </p>
                                 )}
@@ -334,9 +335,9 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         {/* Back Button */}
                         <Link
                             href="/services"
-                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg 
-                border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300
-                hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl 
+                border border-[var(--card-border)] text-[var(--foreground)] opacity-70
+                hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

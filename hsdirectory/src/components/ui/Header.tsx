@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { SearchBar } from './SearchBar';
 
 interface HeaderProps {
@@ -7,19 +8,23 @@ interface HeaderProps {
 
 /**
  * Site header with navigation and optional search bar.
- * Shows compact search on inner pages.
+ * Dark teal background matching mutualaid.nyc (#204045).
  */
 export function Header({ showSearch = true }: HeaderProps) {
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-800 dark:bg-gray-900/95">
+        <header className="sticky top-0 z-50 w-full bg-[var(--nav-bg)]">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold text-lg">
-                        HS
-                    </div>
-                    <span className="font-semibold text-lg text-gray-900 dark:text-white">
-                        HSDirectory
+                <Link href="/" className="flex items-center gap-3">
+                    <Image
+                        src="/logo.png"
+                        alt="Mutual Aid NYC"
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                    />
+                    <span className="font-display text-xl font-bold text-[var(--nav-text)] tracking-tight">
+                        Mutual Aid <span className="text-[var(--highlight)]">NYC</span>
                     </span>
                 </Link>
 
@@ -34,18 +39,20 @@ export function Header({ showSearch = true }: HeaderProps) {
                 <nav className="flex items-center gap-6">
                     <Link
                         href="/services"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        className="text-sm font-semibold hover:text-[var(--highlight)] transition-colors tracking-tight"
+                        style={{ color: '#FFFFFF' }}
                     >
-                        Services
+                        Resources
                     </Link>
                     <Link
                         href="/organizations"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        className="text-sm font-semibold hover:text-[var(--highlight)] transition-colors tracking-tight"
+                        style={{ color: '#FFFFFF' }}
                     >
-                        Organizations
+                        Groups
                     </Link>
                 </nav>
-            </div>
-        </header>
+            </div >
+        </header >
     );
 }

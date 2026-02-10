@@ -1,41 +1,38 @@
 import Link from 'next/link';
 
 /**
- * Site footer with links and attribution.
+ * Site footer with warm navy background and cream text.
  */
 export function Footer() {
     return (
-        <footer className="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
+        <footer className="border-t border-[var(--card-border)] bg-[var(--nav-bg)]">
             <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     {/* Branding */}
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold text-sm">
-                            HS
-                        </div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                            HSDirectory
+                        <span className="font-display text-lg font-bold text-[var(--nav-text)]">
+                            Mutual Aid <span className="text-[var(--primary)]">NYC</span>
                         </span>
                     </div>
 
                     {/* Links */}
-                    <nav className="flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400">
-                        <Link href="/services" className="hover:text-gray-900 dark:hover:text-white">
+                    <nav className="flex flex-wrap gap-6 text-sm text-[var(--nav-text)] opacity-70">
+                        <Link href="/services" className="hover:opacity-100 transition-opacity">
                             Services
                         </Link>
-                        <Link href="/organizations" className="hover:text-gray-900 dark:hover:text-white">
+                        <Link href="/organizations" className="hover:opacity-100 transition-opacity">
                             Organizations
                         </Link>
                     </nav>
 
                     {/* Attribution */}
-                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                    <p className="text-sm text-[var(--nav-text)] opacity-50">
                         Powered by{' '}
                         <a
                             href="https://openreferral.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline dark:text-blue-400"
+                            className="hover:opacity-100 underline transition-opacity"
                         >
                             Open Referral HSDS
                         </a>

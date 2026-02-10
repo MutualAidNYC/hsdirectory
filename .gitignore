@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.production
+*.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -18,7 +20,13 @@ env/
 *.db
 *.sqlite
 *.sqlite3
-hsds_cache.db
+
+# Data artifacts (regenerated on sync)
+geocache.json
+data/
+
+# Deployment (server-specific)
+deploy.sh
 
 # IDE
 .idea/
@@ -42,3 +50,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Keys
+*.pem
+*.key

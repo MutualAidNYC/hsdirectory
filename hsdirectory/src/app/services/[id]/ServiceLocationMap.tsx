@@ -13,8 +13,8 @@ const MapViewDynamic = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="w-full h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-gray-500">Loading map...</div>
+            <div className="w-full h-64 bg-[var(--section-alt)] rounded-xl flex items-center justify-center">
+                <div className="text-[var(--muted)]">Loading map...</div>
             </div>
         )
     }
@@ -33,7 +33,7 @@ export default function ServiceLocationMap({ latitude, longitude, name }: Servic
     }];
 
     return (
-        <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 h-64">
+        <div className="rounded-xl overflow-hidden border border-[var(--card-border)] h-64">
             <MapViewDynamic locations={locations} />
         </div>
     );

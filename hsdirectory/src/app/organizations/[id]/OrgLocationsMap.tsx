@@ -10,8 +10,8 @@ const MapViewDynamic = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="w-full h-[300px] bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading map…</p>
+            <div className="w-full h-[300px] bg-[var(--section-alt)] flex items-center justify-center">
+                <p className="text-[var(--muted)] text-sm">Loading map…</p>
             </div>
         ),
     }

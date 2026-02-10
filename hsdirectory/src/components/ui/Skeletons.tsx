@@ -3,21 +3,21 @@
  */
 export function ServiceCardSkeleton() {
     return (
-        <div className="animate-pulse rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="animate-pulse rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                     {/* Title */}
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3" />
+                    <div className="h-6 bg-[var(--card-border)] rounded w-3/4 mb-3" />
                     {/* Organization */}
-                    <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/2 mb-4" />
+                    <div className="h-4 bg-[var(--section-alt)] rounded w-1/2 mb-4" />
                     {/* Description */}
                     <div className="space-y-2">
-                        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full" />
-                        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-5/6" />
+                        <div className="h-4 bg-[var(--section-alt)] rounded w-full" />
+                        <div className="h-4 bg-[var(--section-alt)] rounded w-5/6" />
                     </div>
                 </div>
                 {/* Status badge */}
-                <div className="h-6 w-16 bg-gray-100 dark:bg-gray-600 rounded-full" />
+                <div className="h-6 w-16 bg-[var(--section-alt)] rounded-full" />
             </div>
         </div>
     );
@@ -28,17 +28,17 @@ export function ServiceCardSkeleton() {
  */
 export function OrganizationCardSkeleton() {
     return (
-        <div className="animate-pulse rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="animate-pulse rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6">
             <div className="flex items-start gap-4">
                 {/* Logo placeholder */}
-                <div className="h-12 w-12 bg-gray-200 dark:bg-gray-600 rounded-lg shrink-0" />
+                <div className="h-12 w-12 bg-[var(--card-border)] rounded-lg shrink-0" />
                 <div className="flex-1">
                     {/* Title */}
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3" />
+                    <div className="h-6 bg-[var(--card-border)] rounded w-2/3 mb-3" />
                     {/* Description */}
                     <div className="space-y-2">
-                        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full" />
-                        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-4/5" />
+                        <div className="h-4 bg-[var(--section-alt)] rounded w-full" />
+                        <div className="h-4 bg-[var(--section-alt)] rounded w-4/5" />
                     </div>
                 </div>
             </div>

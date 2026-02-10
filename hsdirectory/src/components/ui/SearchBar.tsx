@@ -71,9 +71,9 @@ export function SearchBar({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={placeholder}
-                    className={`w-full rounded-full border border-gray-300 bg-white shadow-sm 
-            focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20
-            dark:border-gray-600 dark:bg-gray-800 dark:text-white
+                    className={`w-full rounded-full border border-[var(--card-border)] bg-[var(--card-bg)] shadow-sm 
+            focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20
+            text-[var(--foreground)] placeholder:text-[var(--muted)]
             ${inputClasses}`}
                 />
                 <div className="absolute right-2 flex items-center gap-1">
@@ -82,7 +82,7 @@ export function SearchBar({
                         onClick={handleLocationSearch}
                         disabled={locating}
                         title="Search near my location"
-                        className={`rounded-full p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-gray-400 dark:hover:text-blue-400 transition-colors disabled:opacity-50 ${locating ? 'animate-pulse' : ''}`}
+                        className={`rounded-full p-2 text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--tag-coral-bg)] transition-colors disabled:opacity-50 ${locating ? 'animate-pulse' : ''}`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -93,8 +93,8 @@ export function SearchBar({
                     </button>
                     <button
                         type="submit"
-                        className={`rounded-full bg-blue-600 text-white 
-            hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+                        className={`rounded-full bg-[var(--primary)] text-white 
+            hover:bg-[var(--primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]
             transition-colors ${btnPadding}`}
                     >
                         Search

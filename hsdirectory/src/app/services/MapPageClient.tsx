@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -93,6 +93,19 @@ export default function MapPageClient({
     );
     const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
     const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
+
+    // Sync state when URL params change (e.g. header SearchBar navigation)
+    useEffect(() => {
+        setSearchQuery(searchParams.get('q') || '');
+        setSelectedNeed(searchParams.get('category') || '');
+        setSelectedCommunity(searchParams.get('community') || '');
+        setSelectedBorough(searchParams.get('borough') || '');
+        const lat = searchParams.get('lat');
+        const lng = searchParams.get('lng');
+        if (lat && lng) {
+            setUserLocation({ lat: parseFloat(lat), lng: parseFloat(lng) });
+        }
+    }, [searchParams]);
 
     /**
      * Push filter state into the browser URL so that filtered views are
@@ -246,14 +259,14 @@ export default function MapPageClient({
     return (
         <div className="flex h-[calc(100vh-64px)] overflow-hidden">
             {/* Left Column: Filters */}
-            <div className="w-64 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto scrollbar-thin">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="w-64 flex-shrink-0 bg-[var(--section-alt)] border-r border-[var(--card-border)] p-4 overflow-y-auto scrollbar-thin">
+                <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
                     Filters
                 </h2>
 
                 {/* Search Input */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Search
                     </label>
                     <form onSubmit={handleSearchSubmit}>
@@ -265,7 +278,7 @@ export default function MapPageClient({
                                 syncUrl(e.target.value, selectedNeed, selectedCommunity, selectedBorough);
                             }}
                             placeholder="Search services..."
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                         />
                     </form>
                 </div>
@@ -276,7 +289,7 @@ export default function MapPageClient({
                         <button
                             onClick={handleUseLocation}
                             disabled={locationStatus === 'loading'}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] hover:bg-[var(--section-alt)] transition-colors disabled:opacity-50"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -287,11 +300,11 @@ export default function MapPageClient({
                             {locationStatus === 'loading' ? 'Locating...' : 'Use My Location'}
                         </button>
                     ) : (
-                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                            <span className="text-sm text-green-700 dark:text-green-400 font-medium">📍 Sorting by distance</span>
+                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--tag-olive-bg)] border border-[var(--secondary)]/30">
+                            <span className="text-sm text-[var(--tag-olive-text)] font-medium">📍 Sorting by distance</span>
                             <button
                                 onClick={handleClearLocation}
-                                className="text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                                className="text-xs text-[var(--tag-olive-text)] hover:opacity-70"
                             >
                                 ✕
                             </button>
@@ -304,13 +317,13 @@ export default function MapPageClient({
 
                 {/* Need Category Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Need Category
                     </label>
                     <select
                         value={selectedNeed}
                         onChange={(e) => handleNeedChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
                         <option value="">All Categories</option>
                         {needCategories.map(cat => (
@@ -321,13 +334,13 @@ export default function MapPageClient({
 
                 {/* Community Focus Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Community Focus
                     </label>
                     <select
                         value={selectedCommunity}
                         onChange={(e) => handleCommunityChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
                         <option value="">All Communities</option>
                         {communityCategories.map(cat => (
@@ -338,13 +351,13 @@ export default function MapPageClient({
 
                 {/* Borough Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Borough
                     </label>
                     <select
                         value={selectedBorough}
                         onChange={(e) => handleBoroughChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
                         <option value="">All Boroughs</option>
                         {BOROUGHS.map(b => (
@@ -357,23 +370,23 @@ export default function MapPageClient({
                 {(searchQuery || selectedNeed || selectedCommunity || selectedBorough) && (
                     <button
                         onClick={handleClearFilters}
-                        className="w-full px-4 py-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        className="w-full px-4 py-2 text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] hover:bg-[var(--tag-coral-bg)] rounded-lg transition-colors"
                     >
                         Clear All Filters
                     </button>
                 )}
 
                 {/* Results count */}
-                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-4 text-sm text-[var(--muted)]">
                     {filteredServices.length} services found
                 </div>
             </div>
 
             {/* Middle Column: Service Cards */}
-            <div className="w-[32rem] flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto scrollbar-thin">
+            <div className="w-[32rem] flex-shrink-0 border-r border-[var(--card-border)] overflow-y-auto scrollbar-thin">
                 <div className="p-4 space-y-4">
                     {filteredServices.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <div className="text-center py-8 text-[var(--muted)]">
                             No services match your filters
                         </div>
                     ) : (
@@ -391,7 +404,7 @@ export default function MapPageClient({
 
             {/* Right Column: Map */}
             <div className="flex-1 relative h-full min-w-0 p-2">
-                <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-[var(--card-border)]">
                     <MapViewDynamic locations={mapLocations} highlightedId={hoveredServiceId} />
                 </div>
             </div>
@@ -413,23 +426,23 @@ function ServiceCard({ service, userLocation, onHover }: {
 
     return (
         <div
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer"
+            className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-4 hover:shadow-md hover:border-[var(--primary)]/40 transition-all cursor-pointer"
             onMouseEnter={() => onHover(service.id)}
             onMouseLeave={() => onHover(null)}
         >
             <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                <h3 className="font-semibold text-[var(--foreground)] mb-2 line-clamp-2">
                     {service.name}
                 </h3>
                 {distance !== null && (
-                    <span className="flex-shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    <span className="flex-shrink-0 text-xs font-medium text-[var(--secondary)] bg-[var(--tag-blue-bg)] px-2 py-0.5 rounded-full whitespace-nowrap">
                         {distance < 0.1 ? '< 0.1' : distance.toFixed(1)} mi
                     </span>
                 )}
             </div>
 
             {service.address && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 flex items-start gap-2">
+                <p className="text-sm text-[var(--muted)] mb-2 flex items-start gap-2">
                     <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -439,16 +452,16 @@ function ServiceCard({ service, userLocation, onHover }: {
             )}
 
             {service.phone && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
+                <p className="text-sm text-[var(--muted)] mb-1 flex items-center gap-2">
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <a href={`tel:${service.phone}`} className="hover:text-blue-600">{service.phone}</a>
+                    <a href={`tel:${service.phone}`} className="hover:text-[var(--primary)]">{service.phone}</a>
                 </p>
             )}
 
             {service.url && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                <p className="text-sm text-[var(--muted)] mb-2 flex items-center gap-2">
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
@@ -456,7 +469,7 @@ function ServiceCard({ service, userLocation, onHover }: {
                         href={service.url.startsWith('http') ? service.url : `https://${service.url}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:text-blue-600 truncate"
+                        className="hover:text-[var(--primary)] truncate"
                     >
                         {service.url.replace(/^https?:\/\//, '').split('/')[0]}
                     </a>
@@ -464,7 +477,7 @@ function ServiceCard({ service, userLocation, onHover }: {
             )}
 
             {service.description && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+                <p className="text-sm text-[var(--muted)] mb-3 line-clamp-2">
                     {service.description}
                 </p>
             )}
@@ -475,7 +488,7 @@ function ServiceCard({ service, userLocation, onHover }: {
                     {service.needFocus.map((need, i) => (
                         <span
                             key={`need-${i}`}
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)]"
                         >
                             {need}
                         </span>
@@ -489,7 +502,7 @@ function ServiceCard({ service, userLocation, onHover }: {
                     {service.communityFocus.map((community, i) => (
                         <span
                             key={`community-${i}`}
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]"
                         >
                             {community}
                         </span>
@@ -499,7 +512,7 @@ function ServiceCard({ service, userLocation, onHover }: {
 
             <Link
                 href={`/services/${service.id}`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)]"
             >
                 More Details
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,8 +533,8 @@ const MapViewDynamic = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                <div className="text-gray-500">Loading map...</div>
+            <div className="w-full h-full bg-[var(--section-alt)] flex items-center justify-center">
+                <div className="text-[var(--muted)]">Loading map...</div>
             </div>
         )
     }

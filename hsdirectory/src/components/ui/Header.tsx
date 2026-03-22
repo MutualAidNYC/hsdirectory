@@ -18,20 +18,20 @@ export function Header({ showSearch = true }: HeaderProps) {
                 <Link href="/" className="flex items-center gap-3">
                     <Image
                         src="/logo.png"
-                        alt="Mutual Aid NYC"
-                        width={40}
-                        height={40}
+                        alt="Mutual Aid NYC logo"
+                        width={60}
+                        height={60}
                         className="rounded-full"
                     />
-                    <span className="font-display text-xl font-bold text-[var(--nav-text)] tracking-tight">
-                        Mutual Aid <span className="text-[var(--highlight)]">NYC</span>
+                    <span className="font-display text-xl text-[var(--nav-text)] tracking-tight">
+                        Community Resources Library
                     </span>
                 </Link>
 
                 {/* Search Bar (compact) */}
                 {showSearch && (
                     <div className="hidden md:block flex-1 max-w-md mx-8">
-                        <SearchBar size="sm" placeholder="Search services..." />
+                        <SearchBar size="sm" placeholder="Search resources..." />
                     </div>
                 )}
 

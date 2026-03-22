@@ -178,7 +178,7 @@ export default function MapPageClient({
         syncUrl('', '', '', '');
     };
 
-    // Filter and rank services by relevance.
+    // Filter and rank resources by relevance.
     // Each search token earns points based on which field it matches:
     //   Name match = 4pts, Tag match = 3pts, Address = 2pts, Description = 1pt.
     // Results are sorted by total score (highest first).
@@ -277,7 +277,7 @@ export default function MapPageClient({
                                 setSearchQuery(e.target.value);
                                 syncUrl(e.target.value, selectedNeed, selectedCommunity, selectedBorough);
                             }}
-                            placeholder="Search services..."
+                            placeholder="Search resources..."
                             className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                         />
                     </form>
@@ -378,20 +378,20 @@ export default function MapPageClient({
 
                 {/* Results count */}
                 <div className="mt-4 text-sm text-[var(--muted)]">
-                    {filteredServices.length} services found
+                    {filteredServices.length} resources found
                 </div>
             </div>
 
-            {/* Middle Column: Service Cards */}
+            {/* Middle Column: Resource Cards */}
             <div className="w-[32rem] flex-shrink-0 border-r border-[var(--card-border)] overflow-y-auto scrollbar-thin">
                 <div className="p-4 space-y-4">
                     {filteredServices.length === 0 ? (
                         <div className="text-center py-8 text-[var(--muted)]">
-                            No services match your filters
+                            No resources match your filters
                         </div>
                     ) : (
                         filteredServices.map(service => (
-                            <ServiceCard
+                            <ResourceCard
                                 key={service.id}
                                 service={service}
                                 userLocation={userLocation}
@@ -413,9 +413,9 @@ export default function MapPageClient({
 }
 
 /**
- * Service card component
+ * Resource card component
  */
-function ServiceCard({ service, userLocation, onHover }: {
+function ResourceCard({ service, userLocation, onHover }: {
     service: Service;
     userLocation: { lat: number; lng: number } | null;
     onHover: (id: string | null) => void;
@@ -482,7 +482,7 @@ function ServiceCard({ service, userLocation, onHover }: {
                 </p>
             )}
 
-            {/* Service Category tags */}
+            {/* Need Category tags */}
             {service.needFocus && service.needFocus.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                     {service.needFocus.map((need, i) => (

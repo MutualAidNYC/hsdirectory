@@ -8,7 +8,7 @@ interface OrgSearchProps {
 }
 
 /**
- * Client-side search input for the organizations page.
+ * Client-side search input for the groups page.
  * Submitting navigates to /organizations?q=... which triggers
  * a server-side re-fetch with the search parameter.
  */
@@ -41,7 +41,7 @@ export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search organizations by name..."
+                    placeholder="Search groups by name..."
                     className="w-full pl-10 pr-24 py-3 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
                 />
                 <div className="absolute right-2 flex items-center gap-1">

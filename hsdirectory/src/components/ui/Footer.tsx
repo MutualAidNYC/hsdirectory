@@ -11,17 +11,17 @@ export function Footer() {
                     {/* Branding */}
                     <div className="flex items-center gap-2">
                         <span className="font-display text-lg font-bold text-[var(--nav-text)]">
-                            Mutual Aid <span className="text-[var(--primary)]">NYC</span>
+                            Mutual Aid NYC
                         </span>
                     </div>
 
                     {/* Links */}
                     <nav className="flex flex-wrap gap-6 text-sm text-[var(--nav-text)] opacity-70">
                         <Link href="/services" className="hover:opacity-100 transition-opacity">
-                            Services
+                            Resources
                         </Link>
                         <Link href="/organizations" className="hover:opacity-100 transition-opacity">
-                            Organizations
+                            Groups
                         </Link>
                     </nav>
 

@@ -45,8 +45,8 @@ Built for [Open Referral](https://openreferral.org/) and compatible with the [UK
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/sarapis/at-to-hsds.git
-cd at-to-hsds
+git clone https://github.com/MutualAidNYC/hsdirectory.git
+cd hsdirectory
 ```
 
 ### 2. Set up the API (Python backend)

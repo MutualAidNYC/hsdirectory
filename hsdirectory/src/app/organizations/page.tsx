@@ -5,8 +5,8 @@ import { Pagination } from "@/components/ui/Pagination";
 import { OrgSearch } from "./OrgSearch";
 
 export const metadata: Metadata = {
-    title: "Organizations",
-    description: "Browse organizations providing community services and resources.",
+    title: "Groups",
+    description: "Browse groups providing community resources.",
 };
 
 interface OrganizationsPageProps {
@@ -14,7 +14,7 @@ interface OrganizationsPageProps {
 }
 
 /**
- * Organizations listing page with search and pagination.
+ * Groups listing page with search and pagination.
  * The `q` param drives server-side text search against the API.
  */
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
@@ -45,10 +45,10 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="font-display text-3xl font-bold text-[var(--foreground)] mb-4">
-                    Organizations
+                    Groups
                 </h1>
                 <p className="text-[var(--muted)]">
-                    {totalItems.toLocaleString()} organizations providing community services
+                    {totalItems.toLocaleString()} groups providing community resources
                 </p>
             </div>
 
@@ -64,7 +64,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                 </div>
             )}
 
-            {/* Organizations Grid */}
+            {/* Groups Grid */}
             {organizations.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     {organizations.map((org) => (
@@ -80,10 +80,10 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                         </svg>
                     </div>
                     <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">
-                        {query ? `No results for "${query}"` : "No organizations found"}
+                        {query ? `No results for "${query}"` : "No groups found"}
                     </h3>
                     <p className="text-[var(--muted)]">
-                        {query ? "Try a different search term." : "No organizations are currently available."}
+                        {query ? "Try a different search term." : "No groups are currently available."}
                     </p>
                 </div>
             ) : null}

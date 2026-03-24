@@ -6,7 +6,7 @@ interface OrganizationCardProps {
 }
 
 /**
- * Card component for displaying organization summary in lists.
+ * Card component for displaying group summary in lists.
  */
 export function OrganizationCard({ organization }: OrganizationCardProps) {
     return (
@@ -31,7 +31,7 @@ export function OrganizationCard({ organization }: OrganizationCardProps) {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    {/* Organization Name */}
+                    {/* Group Name */}
                     <h3 className="font-semibold text-lg text-[var(--foreground)] group-hover:text-[var(--primary)] truncate">
                         {organization.name}
                     </h3>
@@ -43,7 +43,7 @@ export function OrganizationCard({ organization }: OrganizationCardProps) {
                         </p>
                     )}
 
-                    {/* Service Count and Links */}
+                    {/* Resource Count and Links */}
                     <div className="mt-3 flex flex-wrap gap-3 text-sm">
                         {organization.service_count !== undefined && organization.service_count > 0 && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]">
@@ -51,7 +51,7 @@ export function OrganizationCard({ organization }: OrganizationCardProps) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
-                                {organization.service_count} {organization.service_count === 1 ? 'Service' : 'Services'}
+                                {organization.service_count} {organization.service_count === 1 ? 'Resource' : 'Resources'}
                             </span>
                         )}
                         {organization.url && (

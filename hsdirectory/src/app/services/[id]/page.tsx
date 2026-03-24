@@ -114,7 +114,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     <li>/</li>
                     <li>
                         <Link href="/services" className="hover:text-[var(--foreground)]">
-                            Services
+                            Resources
                         </Link>
                     </li>
                     <li>/</li>
@@ -162,11 +162,11 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                             </p>
                         )}
 
-                        {/* Service Categories */}
+                        {/* Need Categories */}
                         {(service.need_focus?.length ?? 0) > 0 && (
                             <div className="mb-4">
                                 <h3 className="text-sm font-semibold text-[var(--foreground)] opacity-70 mb-2 uppercase tracking-wide">
-                                    Service Categories
+                                    Need Categories
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {service.need_focus!.map((need: string, index: number) => (
@@ -207,7 +207,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     {service.description && (
                         <section>
                             <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
-                                About This Service
+                                Description
                             </h2>
                             <div className="prose max-w-none">
                                 <p className="text-[var(--muted)] whitespace-pre-wrap">

@@ -52,7 +52,7 @@ const EXCLUDED_TERMS = new Set(["-Not Listed", "Not Listed"]);
  * Homepage with warm community-oriented design inspired by mutualaid.nyc.
  */
 export default async function Home() {
-  let stats = { services: 0, organizations: 0 };
+  let stats = { resources: 0, groups: 0 };
   let categories: string[] = [];
 
   try {
@@ -62,8 +62,8 @@ export default async function Home() {
       getMapServices(),
     ]);
     stats = {
-      services: servicesRes.total_items || 0,
-      organizations: orgsRes.total_items || 0,
+      resources: servicesRes.total_items || 0,
+      groups: orgsRes.total_items || 0,
     };
     categories = (mapData.needCategories || []).filter(
       (c: string) => !EXCLUDED_TERMS.has(c)
@@ -85,10 +85,10 @@ export default async function Home() {
               We help build and strengthen local mutual aid networks.
             </p>
             <p className="text-lg text-[var(--muted)] mb-10">
-              Search our directory of {stats.services.toLocaleString()} services
-              from {stats.organizations.toLocaleString()} organizations
+              Search our directory of {stats.resources.toLocaleString()} resources
+              from {stats.groups.toLocaleString()} groups
             </p>
-            <SearchBar placeholder="What service are you looking for?" />
+            <SearchBar placeholder="What resource are you looking for?" />
           </div>
         </div>
       </section>
@@ -139,19 +139,19 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Service Categories — warm earthy colored cards */}
+      {/* Resource Categories — warm earthy colored cards */}
       {categories.length > 0 && (
         <section className="py-16 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="font-display text-2xl font-bold text-[var(--foreground)]">
-                All Resources
+                Browse By Category
               </h2>
               <Link
                 href="/services"
                 className="text-[var(--primary)] hover:text-[var(--primary-hover)] font-medium transition-colors"
               >
-                View all services →
+                View all resources →
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

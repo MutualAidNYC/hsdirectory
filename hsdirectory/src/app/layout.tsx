@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "HSDirectory - Find Community Services",
+    default: "HSDirectory - Find Community Resources",
     template: "%s | HSDirectory",
   },
   description: "Search and discover community services and resources in your area. Powered by Open Referral HSDS.",

@@ -10,7 +10,7 @@ interface OrganizationDetailPageProps {
 }
 
 /**
- * Generate dynamic metadata for organization detail page.
+ * Generate dynamic metadata for group detail page.
  */
 export async function generateMetadata({ params }: OrganizationDetailPageProps): Promise<Metadata> {
     const { id } = await params;
@@ -18,18 +18,18 @@ export async function generateMetadata({ params }: OrganizationDetailPageProps):
         const organization = await getOrganization(id);
         return {
             title: organization.name,
-            description: organization.description || `Services provided by ${organization.name}`,
+            description: organization.description || `Resources provided by ${organization.name}`,
         };
     } catch {
         return {
-            title: "Organization Not Found",
+            title: "Group Not Found",
         };
     }
 }
 
 /**
- * Organization detail page showing organization info and their services.
- * Two-column layout: Left (info + services), Right (multi-pin map)
+ * Group detail page showing group info and its resources.
+ * Two-column layout: Left (info + resources), Right (multi-pin map)
  */
 export default async function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
     const { id } = await params;
@@ -46,7 +46,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         notFound();
     }
 
-    // Collect all service locations by matching related service IDs
+    // Collect all resource locations by matching related service IDs
     // against the geocoded map data (which has lat/lng for each service).
     interface MapPin {
         id: string;
@@ -90,7 +90,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                     <li>/</li>
                     <li>
                         <Link href="/organizations" className="hover:text-[var(--foreground)]">
-                            Organizations
+                            Groups
                         </Link>
                     </li>
                     <li>/</li>
@@ -102,9 +102,9 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
             {/* Two-Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Organization Info and Services */}
+                {/* Left Column - Group Info and Resources */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Organization Header */}
+                    {/* Group Header */}
                     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6">
                         {/* Name */}
                         <h1 className="font-display text-3xl font-bold text-[var(--foreground)] mb-4">
@@ -149,10 +149,10 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                         </div>
                     </div>
 
-                    {/* Services Section */}
+                    {/* Resources Section */}
                     <section>
                         <h2 className="font-display text-2xl font-bold text-[var(--foreground)] mb-6">
-                            Services ({relatedServices.length})
+                            Resources ({relatedServices.length})
                         </h2>
 
                         {relatedServices.length > 0 ? (
@@ -164,7 +164,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                         ) : (
                             <div className="text-center py-12 bg-[var(--section-alt)] rounded-xl">
                                 <p className="text-[var(--muted)]">
-                                    No services listed for this organization yet.
+                                    No resources listed for this group yet.
                                 </p>
                             </div>
                         )}
@@ -178,7 +178,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                             <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
                                 <div className="p-4 border-b border-[var(--card-border)]">
                                     <h3 className="font-semibold text-[var(--foreground)]">
-                                        Service Locations ({mapLocations.length})
+                                        Resource Locations ({mapLocations.length})
                                     </h3>
                                 </div>
                                 <OrgLocationsMap locations={mapLocations} />
@@ -207,7 +207,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
-                            Back to Organizations
+                            Back to Groups
                         </Link>
                     </div>
                 </div>

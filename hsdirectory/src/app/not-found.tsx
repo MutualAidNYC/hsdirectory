@@ -44,7 +44,7 @@ export default function NotFound() {
               border border-[var(--card-border)] text-[var(--foreground)] opacity-70
               hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
                     >
-                        Browse Services
+                        Browse Resources
                     </Link>
                 </div>
             </div>

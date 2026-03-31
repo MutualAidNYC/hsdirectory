@@ -94,6 +94,10 @@ export default function MapPageClient({
     const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
     const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
 
+    // Responsive state
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'map' | 'list'>('list');
+
     // Sync state when URL params change (e.g. header SearchBar navigation)
     useEffect(() => {
         setSearchQuery(searchParams.get('q') || '');
@@ -257,9 +261,40 @@ export default function MapPageClient({
     }, [filteredServices]);
 
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+        <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden">
+            {/* Mobile Action Bar */}
+            <div className="md:hidden flex items-center justify-between p-3 bg-[var(--section-alt)] border-b border-[var(--card-border)] flex-shrink-0 z-10 w-full shadow-sm">
+                <button 
+                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] text-sm font-medium text-[var(--foreground)]"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    {isFiltersOpen ? 'Hide Filters' : 'Filters'}
+                    {(searchQuery || selectedNeed || selectedCommunity || selectedBorough) && (
+                        <span className="w-2 h-2 rounded-full bg-[var(--highlight)] flex-shrink-0"></span>
+                    )}
+                </button>
+
+                <div className="flex items-center bg-[var(--card-bg)] rounded-lg border border-[var(--card-border)] p-0.5">
+                    <button 
+                        onClick={() => setViewMode('list')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'list' ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+                    >
+                        List
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('map')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'map' ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+                    >
+                        Map
+                    </button>
+                </div>
+            </div>
+
             {/* Left Column: Filters */}
-            <div className="w-64 flex-shrink-0 bg-[var(--section-alt)] border-r border-[var(--card-border)] p-4 overflow-y-auto scrollbar-thin">
+            <div className={`${isFiltersOpen ? 'block' : 'hidden'} md:block w-full md:w-64 flex-shrink-0 bg-[var(--section-alt)] md:border-r border-b md:border-b-0 border-[var(--card-border)] p-4 overflow-y-auto scrollbar-thin`}>
                 <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
                     Filters
                 </h2>
@@ -383,7 +418,7 @@ export default function MapPageClient({
             </div>
 
             {/* Middle Column: Resource Cards */}
-            <div className="w-[32rem] flex-shrink-0 border-r border-[var(--card-border)] overflow-y-auto scrollbar-thin">
+            <div className={`${viewMode === 'list' ? 'block' : 'hidden'} md:block w-full md:w-[32rem] flex-1 flex-shrink-0 border-r border-[var(--card-border)] overflow-y-auto scrollbar-thin`}>
                 <div className="p-4 space-y-4">
                     {filteredServices.length === 0 ? (
                         <div className="text-center py-8 text-[var(--muted)]">
@@ -403,7 +438,7 @@ export default function MapPageClient({
             </div>
 
             {/* Right Column: Map */}
-            <div className="flex-1 relative h-full min-w-0 p-2">
+            <div className={`${viewMode === 'map' ? 'block' : 'hidden'} md:block flex-1 relative h-full min-w-0 p-2 md:p-2`}>
                 <div className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-[var(--card-border)]">
                     <MapViewDynamic locations={mapLocations} highlightedId={hoveredServiceId} />
                 </div>

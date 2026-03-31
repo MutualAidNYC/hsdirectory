@@ -23,7 +23,7 @@ export function Header({ showSearch = true }: HeaderProps) {
                         height={60}
                         className="rounded-full"
                     />
-                    <span className="font-display text-xl text-[var(--nav-text)] tracking-tight">
+                    <span className="hidden md:inline font-display text-xl text-[var(--nav-text)] tracking-tight">
                         Community Resources Library
                     </span>
                 </Link>
@@ -36,7 +36,7 @@ export function Header({ showSearch = true }: HeaderProps) {
                 )}
 
                 {/* Navigation */}
-                <nav className="flex items-center gap-6">
+                <nav className="flex items-center gap-4 md:gap-6">
                     <Link
                         href="/services"
                         className="text-sm font-semibold hover:text-[var(--highlight)] transition-colors tracking-tight"

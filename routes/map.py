@@ -3,11 +3,22 @@ Map Services API endpoint.
 
 Serves service data with location info and filter categories for map page.
 """
+import math
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/map", tags=["map"])
+
+def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate the great circle distance in miles between two points on the earth."""
+    R = 3959.0 # miles
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
+
 
 
 class MapService(BaseModel):
@@ -152,17 +163,29 @@ async def get_map_services():
         for loc_id in location_ids:
             if loc_id in location_lookup:
                 loc = location_lookup[loc_id]
+                # Extract first linked address
+                for addr_id in loc.get("address_ids", []):
+                    if addr_id in address_lookup:
+                        address = address_lookup[addr_id].get("formatted")
+                        break
+                if not address:
+                    address = loc.get("name")
+                    
                 if loc.get("latitude") and loc.get("longitude"):
                     latitude = float(loc["latitude"])
                     longitude = float(loc["longitude"])
-                    # Resolve full structured address from linked address records
-                    for addr_id in loc.get("address_ids", []):
-                        if addr_id in address_lookup:
-                            address = address_lookup[addr_id].get("formatted")
-                            break
-                    if not address:
-                        address = loc.get("name")
                     break
+                else:
+                    # Fallback to geocache for the linked address
+                    for addr_id in loc.get("address_ids", []):
+                        if addr_id in geocache:
+                            geo = geocache[addr_id]
+                            if geo and "latitude" in geo and "longitude" in geo:
+                                latitude = float(geo["latitude"])
+                                longitude = float(geo["longitude"])
+                                break
+                    if latitude:
+                        break
         
         # Fallback to first address with location
         if not latitude:
@@ -190,6 +213,11 @@ async def get_map_services():
                             latitude = float(geo["latitude"])
                             longitude = float(geo["longitude"])
                             break
+        # Distance filter (50 miles from NYC)
+        if latitude is not None and longitude is not None:
+            if haversine(latitude, longitude, 40.7128, -74.0060) > 50.0:
+                latitude = None
+                longitude = None
         
         # Get phone
         phone = None
@@ -200,7 +228,7 @@ async def get_map_services():
                 break
         # Get org name
         org_name = None
-        org_ids = fields.get("organization", []) or []
+        org_ids = fields.get("organizations", []) or []
         for org_id in org_ids:
             if org_id in org_lookup:
                 org_name = org_lookup[org_id]

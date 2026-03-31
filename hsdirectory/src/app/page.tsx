@@ -53,7 +53,7 @@ const EXCLUDED_TERMS = new Set(["-Not Listed", "Not Listed"]);
  */
 export default async function Home() {
   let stats = { resources: 0, groups: 0 };
-  let categories: string[] = [];
+  let categories: {name: string, icon?: string | null}[] = [];
 
   try {
     const [servicesRes, orgsRes, mapData] = await Promise.all([
@@ -66,8 +66,7 @@ export default async function Home() {
       groups: orgsRes.total_items || 0,
     };
     categories = (mapData.needCategories || [])
-      .map(c => c.name)
-      .filter((c: string) => !EXCLUDED_TERMS.has(c));
+      .filter((c: any) => !EXCLUDED_TERMS.has(c.name));
   } catch (error) {
     console.error("Failed to fetch homepage data:", error);
   }
@@ -159,15 +158,24 @@ export default async function Home() {
                 const color = CARD_COLORS[index % CARD_COLORS.length];
                 return (
                   <Link
-                    key={category}
-                    href={`/services?category=${encodeURIComponent(category)}`}
+                    key={category.name}
+                    href={`/services?category=${encodeURIComponent(category.name)}`}
                     className={`group flex items-center gap-3 p-5 rounded-2xl ${color.bg} border border-[var(--card-border)] hover:shadow-md transition-all`}
                   >
-                    <span className="text-2xl flex-shrink-0">
-                      {CATEGORY_ICONS[category] || "📋"}
+                    <span className="text-2xl flex-shrink-0 flex items-center justify-center w-8 h-8">
+                      {category.icon ? (
+                        <img 
+                          src={category.icon} 
+                          alt={category.name} 
+                          className="w-full h-full object-contain"
+                          loading="lazy" 
+                        />
+                      ) : (
+                        CATEGORY_ICONS[category.name] || "📋"
+                      )}
                     </span>
                     <span className={`text-sm font-semibold ${color.text}`}>
-                      {category}
+                      {category.name}
                     </span>
                   </Link>
                 );

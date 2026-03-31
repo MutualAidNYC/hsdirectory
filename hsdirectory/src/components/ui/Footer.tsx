@@ -19,13 +19,13 @@ export function Footer() {
                     <nav className="flex flex-wrap gap-6 text-sm">
                         <Link 
                             href="/services" 
-                            className="text-white hover:text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
+                            className="!text-white hover:!text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
                         >
                             Resources
                         </Link>
                         <Link 
                             href="/organizations" 
-                            className="text-white hover:text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
+                            className="!text-white hover:!text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
                         >
                             Groups
                         </Link>

@@ -11,7 +11,7 @@ export function Footer() {
                     {/* Branding */}
                     <div className="flex items-center gap-2">
                         <span className="font-display text-lg font-bold text-[var(--nav-text)]">
-                            Mutual Aid NYC
+                            Mutual Aid <span className="text-[var(--highlight)]">NYC</span>
                         </span>
                     </div>
 
@@ -33,6 +33,7 @@ export function Footer() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:opacity-100 underline transition-opacity"
+                            style={{ color: 'inherit' }}
                         >
                             Open Referral HSDS
                         </a>

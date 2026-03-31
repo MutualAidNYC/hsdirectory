@@ -19,23 +19,45 @@ interface MapViewProps {
     highlightedId?: string | null;
 }
 
-/** Default and highlighted pin styles. */
+/** Pin dimensions — default and highlighted. */
+const PIN_W = 26;
+const PIN_H = 36;
+const PIN_HL_W = 32;
+const PIN_HL_H = 44;
+
+/**
+ * Build an SVG teardrop pin as a data URI.
+ * The pin tip sits at the bottom-center so the anchor lines up with coords.
+ */
+function pinSvg(fill: string, stroke: string, w: number, h: number): string {
+    // Bulb radius is ~40% of width, teardrop tapers to bottom point
+    const r = w * 0.4;
+    const cx = w / 2;
+    const bulbTop = r + 2; // slight padding from top
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <filter id="s"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.3"/></filter>
+      <path d="M${cx},${h - 1} C${cx - r * 0.15},${h * 0.62} ${cx - r - 2},${bulbTop + r * 0.6} ${cx - r - 2},${bulbTop}
+               A${r + 2},${r + 2} 0 1,1 ${cx + r + 2},${bulbTop}
+               C${cx + r + 2},${bulbTop + r * 0.6} ${cx + r * 0.15},${h * 0.62} ${cx},${h - 1}Z"
+            fill="${fill}" stroke="${stroke}" stroke-width="1.5" filter="url(#s)"/>
+      <circle cx="${cx}" cy="${bulbTop}" r="${r * 0.4}" fill="white" opacity="0.5"/>
+    </svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** Default and highlighted pin style strings. */
 const PIN_DEFAULT = `
-    width: 28px; height: 28px;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    border: 3px solid white; border-radius: 50%;
+    width: ${PIN_W}px; height: ${PIN_H}px;
+    background: url("${pinSvg('#8F2D24', '#6b1f18', PIN_W, PIN_H)}") no-repeat center/contain;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     z-index: 1;
 `;
 const PIN_HIGHLIGHTED = `
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: 3px solid white; border-radius: 50%;
+    width: ${PIN_HL_W}px; height: ${PIN_HL_H}px;
+    background: url("${pinSvg('#f7cf56', '#c9a530', PIN_HL_W, PIN_HL_H)}") no-repeat center/contain;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(245,158,11,0.6);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     z-index: 10;
 `;
 
@@ -99,14 +121,12 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
 
             el.addEventListener('mouseenter', () => {
                 if (el.dataset.highlighted !== 'true') {
-                    el.style.boxShadow = '0 4px 12px rgba(37,99,235,0.5)';
-                    el.style.borderWidth = '4px';
+                    el.style.transform = 'scale(1.2)';
                 }
             });
             el.addEventListener('mouseleave', () => {
                 if (el.dataset.highlighted !== 'true') {
-                    el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                    el.style.borderWidth = '3px';
+                    el.style.transform = 'scale(1)';
                 }
             });
 
@@ -131,8 +151,8 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                 </div>
             `;
 
-            const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent);
-            const marker = new maplibregl.Marker({ element: el })
+            const popup = new maplibregl.Popup({ offset: [0, -PIN_H] }).setHTML(popupContent);
+            const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
                 .setLngLat([loc.longitude, loc.latitude])
                 .setPopup(popup)
                 .addTo(mapRef.current!);

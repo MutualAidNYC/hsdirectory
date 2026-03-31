@@ -1,19 +1,28 @@
-# Contributing to Airtable-to-HSDS API
+# Contributing to Mutual Aid NYC HSDirectory
 
-Thanks for your interest in contributing! This project bridges Airtable data to the [Human Services Data Specification (HSDS)](https://docs.openreferral.org/) API format.
+Thanks for your interest in contributing! This project bridges Airtable data to the [Human Services Data Specification (HSDS)](https://docs.openreferral.org/) API format and presents it via a Next.js directory.
 
 ## Getting Started
 
+To run the full stack locally for development:
+
 1. Fork the repository
-2. Clone your fork locally
+2. Clone your fork locally (`git clone https://github.com/MutualAidNYC/hsdirectory.git`)
 3. Copy `.env.example` to `.env` and add your Airtable credentials
-4. Create a virtual environment and install dependencies:
+4. Start the backend API:
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
+   uvicorn main:app --reload --port 8080
    ```
-5. Run the API: `uvicorn main:app --reload --port 8080`
+5. In a second terminal, start the Next.js frontend:
+   ```bash
+   cd hsdirectory
+   npm install
+   echo "NEXT_PUBLIC_API_URL=http://localhost:8080" > .env.local
+   npm run dev
+   ```
 
 ## How to Contribute
 

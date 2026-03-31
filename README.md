@@ -1,4 +1,4 @@
-# Airtable → HSDS API
+# Mutual Aid NYC HSDirectory
 
 A FastAPI application that syncs data from an [Airtable](https://airtable.com) base and serves it through an [HSDS 3.0](https://docs.openreferral.org/) compliant REST API. Includes a Next.js search frontend with interactive maps.
 
@@ -246,16 +246,16 @@ This is the simplest production deployment for a single server.
 sudo apt update && sudo apt install -y python3-venv python3-pip nginx nodejs npm
 
 # Create application directory
-sudo mkdir -p /opt/hsds
-sudo chown $USER:$USER /opt/hsds
+sudo mkdir -p /opt/mutualaid
+sudo chown $USER:$USER /opt/mutualaid
 ```
 
 #### 2. Deploy code
 
 ```bash
 # Clone or copy the code
-cd /opt/hsds
-git clone https://github.com/sarapis/at-to-hsds.git backend
+cd /opt/mutualaid
+git clone https://github.com/MutualAidNYC/hsdirectory.git .
 cd backend
 
 # Python setup
@@ -275,18 +275,18 @@ npm run build
 
 #### 3. Create systemd services
 
-**API service** (`/etc/systemd/system/hsds-api.service`):
+**API service** (`/etc/systemd/system/manyc-api.service`):
 
 ```ini
 [Unit]
-Description=HSDS API
+Description=Mutual Aid NYC API
 After=network.target
 
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/opt/hsds/backend
-ExecStart=/opt/hsds/backend/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8080
+WorkingDirectory=/opt/mutualaid/backend
+ExecStart=/opt/mutualaid/backend/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8300
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
@@ -295,22 +295,22 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 ```
 
-**Frontend service** (`/etc/systemd/system/hsds-web.service`):
+**Frontend service** (`/etc/systemd/system/manyc-web.service`):
 
 ```ini
 [Unit]
-Description=HSDirectory Web
+Description=Mutual Aid NYC Web
 After=network.target
 
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/opt/hsds/backend/hsdirectory
-ExecStart=/usr/bin/node /opt/hsds/backend/hsdirectory/node_modules/.bin/next start -p 3000
+WorkingDirectory=/opt/mutualaid/frontend
+ExecStart=/usr/bin/node /opt/mutualaid/frontend/node_modules/.bin/next start -p 3100
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=3100
 
 [Install]
 WantedBy=multi-user.target
@@ -318,8 +318,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable hsds-api hsds-web
-sudo systemctl start hsds-api hsds-web
+sudo systemctl enable manyc-api manyc-web
+sudo systemctl start manyc-api manyc-web
 ```
 
 #### 4. Configure Nginx reverse proxy
@@ -356,7 +356,7 @@ server {
 
     # API direct access (docs, openapi, services, etc.)
     location ~ ^/(docs|redoc|openapi\.json|services|organizations|taxonomies|taxonomy_terms|service_at_locations|locations|map) {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8300;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -521,6 +521,16 @@ at-to-hsds/
 - [UK Open Referral Profile](https://openreferraluk.org/)
 - [ORUK Validator](https://openreferraluk.org/developers/validator) compatible
 
+## Contributing
+
+We welcome contributions! To get started:
+1. **Fork** the repository and clone it to your local machine.
+2. **Follow the Quick Start setup** above to get your local development environment running.
+3. **Commit** your changes on a feature branch.
+4. **Open a Pull Request** against our `main` branch.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full contribution guidelines.
+
 ## License
 
-[MIT](LICENSE) — see [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+[MIT](LICENSE)

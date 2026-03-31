@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { TagLink } from '@/components/ui/TagLink';
 
 /** NYC boroughs and the city names that map to them in address data. */
 const BOROUGH_MAP: Record<string, string[]> = {
@@ -50,10 +51,15 @@ interface Service {
     longitude?: number;
 }
 
+interface Category {
+    name: string;
+    icon?: string;
+}
+
 interface MapPageClientProps {
     services: Service[];
-    needCategories: string[];
-    communityCategories: string[];
+    needCategories: Category[];
+    communityCategories: Category[];
 }
 
 /**
@@ -248,7 +254,7 @@ export default function MapPageClient({
 
     // Get locations for map
     const mapLocations = useMemo(() => {
-        return filteredServices
+        const locations = filteredServices
             .filter(s => s.latitude && s.longitude)
             .map(s => ({
                 id: s.id,
@@ -257,7 +263,30 @@ export default function MapPageClient({
                 longitude: s.longitude!,
                 serviceName: s.name,
                 serviceId: s.id,
+                orgName: (s as any).organization_name,
             }));
+            
+        // Add jitter for overlapping coordinates (exact matches)
+        const locationMap = new Map<string, number>();
+        const jitterDegrees = 0.00005; // ~5 meters
+        
+        return locations.map(loc => {
+            const key = `${loc.latitude},${loc.longitude}`;
+            const count = locationMap.get(key) || 0;
+            locationMap.set(key, count + 1);
+            
+            if (count > 0) {
+                // Apply a spiral or simple offset based on index to separate them visually
+                const angle = count * Math.PI / 4; // Spread them around
+                const radius = jitterDegrees * Math.ceil(count / 8);
+                return {
+                    ...loc,
+                    latitude: loc.latitude + Math.sin(angle) * radius,
+                    longitude: loc.longitude + Math.cos(angle) * radius,
+                };
+            }
+            return loc;
+        });
     }, [filteredServices]);
 
     return (
@@ -301,11 +330,12 @@ export default function MapPageClient({
 
                 {/* Search Input */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
+                    <label htmlFor="search-resources" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Search
                     </label>
                     <form onSubmit={handleSearchSubmit}>
                         <input
+                            id="search-resources"
                             type="text"
                             value={searchQuery}
                             onChange={(e) => {
@@ -352,44 +382,47 @@ export default function MapPageClient({
 
                 {/* Need Category Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
+                    <label htmlFor="filter-need" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Need Category
                     </label>
                     <select
+                        id="filter-need"
                         value={selectedNeed}
                         onChange={(e) => handleNeedChange(e.target.value)}
                         className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
                         <option value="">All Categories</option>
                         {needCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat.name} value={cat.name}>{cat.name}</option>
                         ))}
                     </select>
                 </div>
 
                 {/* Community Focus Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
+                    <label htmlFor="filter-community" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Community Focus
                     </label>
                     <select
+                        id="filter-community"
                         value={selectedCommunity}
                         onChange={(e) => handleCommunityChange(e.target.value)}
                         className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
                         <option value="">All Communities</option>
                         {communityCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat.name} value={cat.name}>{cat.name}</option>
                         ))}
                     </select>
                 </div>
 
                 {/* Borough Filter */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
+                    <label htmlFor="filter-borough" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
                         Borough
                     </label>
                     <select
+                        id="filter-borough"
                         value={selectedBorough}
                         onChange={(e) => handleBoroughChange(e.target.value)}
                         className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
@@ -521,12 +554,13 @@ function ResourceCard({ service, userLocation, onHover }: {
             {service.needFocus && service.needFocus.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                     {service.needFocus.map((need, i) => (
-                        <span
+                        <TagLink
                             key={`need-${i}`}
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)]"
+                            colorScheme="coral"
+                            size="sm"
                         >
                             {need}
-                        </span>
+                        </TagLink>
                     ))}
                 </div>
             )}
@@ -535,12 +569,13 @@ function ResourceCard({ service, userLocation, onHover }: {
             {service.communityFocus && service.communityFocus.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                     {service.communityFocus.map((community, i) => (
-                        <span
+                        <TagLink
                             key={`community-${i}`}
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]"
+                            colorScheme="olive"
+                            size="sm"
                         >
                             {community}
-                        </span>
+                        </TagLink>
                     ))}
                 </div>
             )}

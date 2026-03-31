@@ -11,6 +11,7 @@ interface MapLocation {
     longitude: number;
     serviceName?: string;
     serviceId?: string;
+    orgName?: string;
 }
 
 interface MapViewProps {
@@ -58,6 +59,7 @@ function toGeoJSON(locations: MapLocation[]): GeoJSON.FeatureCollection {
                 name: loc.serviceName || loc.name,
                 locationName: loc.name,
                 serviceId: loc.serviceId || '',
+                orgName: loc.orgName || '',
             },
         })),
     };
@@ -189,6 +191,9 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                             <h4 style="font-weight: 600; margin-bottom: 4px; color: #111; font-size: 14px;">
                                 ${props.name}
                             </h4>
+                            ${props.orgName 
+                            ? `<p style="color: #444; font-size: 13px; font-weight: 500; margin-bottom: 2px;">${props.orgName}</p>` 
+                            : ''}
                             ${props.locationName && props.locationName !== props.name
                             ? `<p style="color: #666; font-size: 12px; margin-bottom: 8px;">${props.locationName}</p>`
                             : ''}

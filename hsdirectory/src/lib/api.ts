@@ -24,6 +24,18 @@ export interface Service {
     group_name?: string;
     need_focus?: string[];
     community_focus?: string[];
+    phones?: Phone[];
+}
+
+/**
+ * HSDS Phone type
+ */
+export interface Phone {
+    id: string;
+    number: string;
+    extension?: string;
+    type?: string;
+    description?: string;
 }
 
 /**
@@ -255,13 +267,18 @@ export interface MapService {
     longitude?: number;
 }
 
+export interface Category {
+    name: string;
+    icon?: string;
+}
+
 /**
  * Map data response with services and filter options
  */
 export interface MapDataResponse {
     services: MapService[];
-    needCategories: string[];
-    communityCategories: string[];
+    needCategories: Category[];
+    communityCategories: Category[];
 }
 
 /**

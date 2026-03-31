@@ -40,19 +40,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                             {service.description}
                         </p>
                     )}
-                </div>
-
-                {/* Status Badge */}
-                {service.status && (
-                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium
-            ${service.status === 'active'
-                            ? 'bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]'
-                            : 'bg-[var(--section-alt)] text-[var(--muted)]'
-                        }`}
-                    >
-                        {service.status}
-                    </span>
-                )}
+            </div>
             </div>
 
             {/* Footer with address */}

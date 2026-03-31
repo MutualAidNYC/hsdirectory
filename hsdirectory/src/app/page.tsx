@@ -65,9 +65,9 @@ export default async function Home() {
       resources: servicesRes.total_items || 0,
       groups: orgsRes.total_items || 0,
     };
-    categories = (mapData.needCategories || []).filter(
-      (c: string) => !EXCLUDED_TERMS.has(c)
-    );
+    categories = (mapData.needCategories || [])
+      .map(c => c.name)
+      .filter((c: string) => !EXCLUDED_TERMS.has(c));
   } catch (error) {
     console.error("Failed to fetch homepage data:", error);
   }

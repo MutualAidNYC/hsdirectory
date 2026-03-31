@@ -66,7 +66,11 @@ export function SearchBar({
     return (
         <form onSubmit={handleSubmit} className="w-full max-w-2xl">
             <div className="relative flex items-center">
+                <label htmlFor="search-input" className="sr-only">
+                    {placeholder}
+                </label>
                 <input
+                    id="search-input"
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}

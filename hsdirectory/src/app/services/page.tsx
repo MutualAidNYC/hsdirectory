@@ -14,8 +14,8 @@ export const metadata: Metadata = {
  */
 export default async function ServicesPage() {
     let services: any[] = [];
-    let needCategories: string[] = [];
-    let communityCategories: string[] = [];
+    let needCategories: any[] = [];
+    let communityCategories: any[] = [];
     let error = null;
 
     try {

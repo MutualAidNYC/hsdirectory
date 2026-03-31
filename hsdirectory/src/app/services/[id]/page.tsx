@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getService, getMapServices, searchOrganizationByName } from "@/lib/api";
 import ServiceLocationMap from "./ServiceLocationMap";
+import { TagLink } from "@/components/ui/TagLink";
 
 interface ServiceDetailPageProps {
     params: Promise<{ id: string }>;
@@ -133,16 +134,6 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                             <h1 className="font-display text-3xl font-bold text-[var(--foreground)]">
                                 {service.name}
                             </h1>
-                            {service.status && (
-                                <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium
-                  ${service.status === 'active' || service.status === 'Published'
-                                        ? 'bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]'
-                                        : 'bg-[var(--section-alt)] text-[var(--muted)]'
-                                    }`}
-                                >
-                                    {service.status === 'Published' ? 'Active' : service.status}
-                                </span>
-                            )}
                         </div>
 
                         {/* Group/Organization Name - linked to org profile */}
@@ -170,13 +161,13 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {service.need_focus!.map((need: string, index: number) => (
-                                        <Link
+                                        <TagLink
                                             key={`need-${index}`}
                                             href={`/services?category=${encodeURIComponent(need)}`}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)] hover:opacity-80 transition-opacity"
+                                            colorScheme="coral"
                                         >
                                             {need}
-                                        </Link>
+                                        </TagLink>
                                     ))}
                                 </div>
                             </div>
@@ -190,13 +181,13 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {service.community_focus!.map((community: string, index: number) => (
-                                        <Link
+                                        <TagLink
                                             key={`community-${index}`}
                                             href={`/services?community=${encodeURIComponent(community)}`}
-                                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)] hover:opacity-80 transition-opacity"
+                                            colorScheme="olive"
                                         >
                                             {community}
-                                        </Link>
+                                        </TagLink>
                                     ))}
                                 </div>
                             </div>
@@ -324,7 +315,22 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                     </a>
                                 )}
 
-                                {!service.url && !service.email && (
+                                {(service.phones?.length ?? 0) > 0 && service.phones!.map((phone: any) => (
+                                    <div key={phone.id} className="flex items-center gap-3 text-[var(--muted)]">
+                                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        <span>
+                                            <a href={`tel:${phone.number}`} className="hover:text-[var(--foreground)] hover:underline">
+                                                {phone.number}
+                                            </a>
+                                            {phone.extension && <span className="text-sm border-l border-[var(--card-border)] ml-2 pl-2">ext {phone.extension}</span>}
+                                            {phone.type && <span className="text-sm opacity-70 ml-2">({phone.type})</span>}
+                                        </span>
+                                    </div>
+                                ))}
+
+                                {!service.url && !service.email && (!service.phones || service.phones.length === 0) && (
                                     <p className="text-[var(--muted)] text-sm">
                                         No contact information available.
                                     </p>

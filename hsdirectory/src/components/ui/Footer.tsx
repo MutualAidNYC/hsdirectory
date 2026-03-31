@@ -16,18 +16,16 @@ export function Footer() {
                     </div>
 
                     {/* Links */}
-                    <nav className="flex flex-wrap gap-6 text-sm text-[var(--nav-text)] opacity-80">
+                    <nav className="flex flex-wrap gap-6 text-sm">
                         <Link 
                             href="/services" 
-                            className="hover:text-[var(--highlight)] hover:opacity-100 hover:no-underline transition-all duration-200"
-                            style={{ color: 'inherit' }}
+                            className="text-white hover:text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
                         >
                             Resources
                         </Link>
                         <Link 
                             href="/organizations" 
-                            className="hover:text-[var(--highlight)] hover:opacity-100 hover:no-underline transition-all duration-200"
-                            style={{ color: 'inherit' }}
+                            className="text-white hover:text-[var(--highlight)] hover:no-underline transition-all duration-200 font-medium"
                         >
                             Groups
                         </Link>

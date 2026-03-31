@@ -22,13 +22,20 @@ class MapService(BaseModel):
     communityFocus: List[str] = []
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    organization_name: Optional[str] = None
+
+
+class CategoryDetail(BaseModel):
+    """Detailed category info for map filters."""
+    name: str
+    icon: Optional[str] = None
 
 
 class MapDataResponse(BaseModel):
     """Full map data response with services and filter options."""
     services: List[MapService]
-    needCategories: List[str]
-    communityCategories: List[str]
+    needCategories: List[CategoryDetail]
+    communityCategories: List[CategoryDetail]
 
 
 @router.get("/services", response_model=MapDataResponse)
@@ -38,9 +45,21 @@ async def get_map_services():
     """
     from airtable.client import get_airtable_client
     from config import get_settings
+    import json
+    from pathlib import Path
     
     client = get_airtable_client()
     settings = get_settings()
+
+    # Load geocache
+    geocache = {}
+    cache_path = Path(__file__).parent.parent / "geocache.json"
+    if cache_path.exists():
+        try:
+            with open(cache_path, "r") as f:
+                geocache = json.load(f)
+        except Exception:
+            pass
     
     # Fetch services (filtered by status)
     filter_formula = None
@@ -53,10 +72,28 @@ async def get_map_services():
     addresses = await client.list_records("addresses")
     locations = await client.list_records("locations")
     
-    # Fetch phones
+    # Fetch phones and organizations
     phones = await client.list_records("phones")
+    organizations = await client.list_records("organizations")
+    tax_terms = await client.list_records("taxonomy_terms")
     
     # Build lookups
+    org_lookup = {}
+    for record in organizations:
+        fields = record.get("fields", {})
+        org_lookup[record["id"]] = fields.get("name", "")
+
+    icon_lookup = {}
+    for record in tax_terms:
+        fields = record.get("fields", {})
+        name = fields.get("name")
+        icon_url = None
+        icon_dark = fields.get("x-icon_dark", [])
+        if icon_dark and isinstance(icon_dark, list) and len(icon_dark) > 0:
+            icon_url = icon_dark[0].get("url")
+        if name and icon_url:
+            icon_lookup[name] = icon_url
+
     location_lookup = {}
     for record in locations:
         fields = record.get("fields", {})
@@ -145,6 +182,14 @@ async def get_map_services():
                                 break
                     if latitude:
                         break
+                    
+                    # Try fallback to geocache
+                    if addr_id in geocache:
+                        geo = geocache[addr_id]
+                        if geo and "latitude" in geo and "longitude" in geo:
+                            latitude = float(geo["latitude"])
+                            longitude = float(geo["longitude"])
+                            break
         
         # Get phone
         phone = None
@@ -153,7 +198,14 @@ async def get_map_services():
             if phone_id in phone_lookup:
                 phone = phone_lookup[phone_id]
                 break
-        
+        # Get org name
+        org_name = None
+        org_ids = fields.get("organization", []) or []
+        for org_id in org_ids:
+            if org_id in org_lookup:
+                org_name = org_lookup[org_id]
+                break
+
         map_services.append(MapService(
             id=record["id"],
             name=fields.get("name", "Unnamed Service"),
@@ -165,10 +217,17 @@ async def get_map_services():
             communityFocus=community_focus if isinstance(community_focus, list) else [],
             latitude=latitude,
             longitude=longitude,
+            organization_name=org_name,
         ))
     
     return MapDataResponse(
         services=map_services,
-        needCategories=sorted(need_categories),
-        communityCategories=sorted(community_categories),
+        needCategories=[
+            {"name": c, "icon": icon_lookup.get(c)} 
+            for c in sorted(need_categories)
+        ],
+        communityCategories=[
+            {"name": c, "icon": icon_lookup.get(c)} 
+            for c in sorted(community_categories)
+        ],
     )

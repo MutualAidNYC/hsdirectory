@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -19,56 +19,60 @@ interface MapViewProps {
     highlightedId?: string | null;
 }
 
-/** Pin dimensions — default and highlighted. */
-const PIN_W = 26;
-const PIN_H = 36;
-const PIN_HL_W = 32;
-const PIN_HL_H = 44;
+/** Pin icon dimensions. */
+const PIN_W = 28;
+const PIN_H = 40;
 
 /**
- * Build an SVG teardrop pin as a data URI.
- * The pin tip sits at the bottom-center so the anchor lines up with coords.
+ * Generate an SVG pin image as a data URL for loading into the map sprite.
+ * Uses a simple, clean teardrop shape with a dot highlight.
  */
-function pinSvg(fill: string, stroke: string, w: number, h: number): string {
-    // Bulb radius is ~40% of width, teardrop tapers to bottom point
-    const r = w * 0.4;
-    const cx = w / 2;
-    const bulbTop = r + 2; // slight padding from top
+function pinDataUrl(fill: string, stroke: string): string {
+    const w = PIN_W;
+    const h = PIN_H;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-      <filter id="s"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.3"/></filter>
-      <path d="M${cx},${h - 1} C${cx - r * 0.15},${h * 0.62} ${cx - r - 2},${bulbTop + r * 0.6} ${cx - r - 2},${bulbTop}
-               A${r + 2},${r + 2} 0 1,1 ${cx + r + 2},${bulbTop}
-               C${cx + r + 2},${bulbTop + r * 0.6} ${cx + r * 0.15},${h * 0.62} ${cx},${h - 1}Z"
-            fill="${fill}" stroke="${stroke}" stroke-width="1.5" filter="url(#s)"/>
-      <circle cx="${cx}" cy="${bulbTop}" r="${r * 0.4}" fill="white" opacity="0.5"/>
+      <path d="M${w / 2},${h - 2}
+        C${w / 2 - 2},${h * 0.6} 2,${h * 0.38} 2,${h * 0.33}
+        A${w / 2 - 2},${w / 2 - 2} 0 1,1 ${w - 2},${h * 0.33}
+        C${w - 2},${h * 0.38} ${w / 2 + 2},${h * 0.6} ${w / 2},${h - 2}Z"
+        fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <circle cx="${w / 2}" cy="${h * 0.3}" r="${w * 0.14}" fill="white" opacity="0.5"/>
     </svg>`;
-    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-/** Default and highlighted pin style strings. */
-const PIN_DEFAULT = `
-    width: ${PIN_W}px; height: ${PIN_H}px;
-    background: url("${pinSvg('#8F2D24', '#6b1f18', PIN_W, PIN_H)}") no-repeat center/contain;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    z-index: 1;
-`;
-const PIN_HIGHLIGHTED = `
-    width: ${PIN_HL_W}px; height: ${PIN_HL_H}px;
-    background: url("${pinSvg('#f7cf56', '#c9a530', PIN_HL_W, PIN_HL_H)}") no-repeat center/contain;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    z-index: 10;
-`;
+/**
+ * Build a GeoJSON FeatureCollection from locations.
+ */
+function toGeoJSON(locations: MapLocation[]): GeoJSON.FeatureCollection {
+    return {
+        type: 'FeatureCollection',
+        features: locations.map(loc => ({
+            type: 'Feature' as const,
+            geometry: {
+                type: 'Point' as const,
+                coordinates: [loc.longitude, loc.latitude],
+            },
+            properties: {
+                id: loc.serviceId || loc.id,
+                name: loc.serviceName || loc.name,
+                locationName: loc.name,
+                serviceId: loc.serviceId || '',
+            },
+        })),
+    };
+}
 
 /**
- * Interactive map using MapLibre GL with OpenStreetMap tiles.
- * Supports highlighting a specific pin and flying to it.
+ * Interactive map using MapLibre GL with native symbol layers.
+ *
+ * Pins are rendered on the WebGL canvas (not DOM elements), so they
+ * move perfectly in sync with the map during pan/zoom — no lag.
  */
 export default function MapView({ locations, highlightedId }: MapViewProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
-    const markersRef = useRef<Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>>(new Map());
+    const popupRef = useRef<maplibregl.Popup | null>(null);
 
     // Initialize map once
     useEffect(() => {
@@ -96,7 +100,7 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
             }],
         };
 
-        mapRef.current = new maplibregl.Map({
+        const map = new maplibregl.Map({
             container: mapContainer.current,
             style: osmStyle,
             center: locations.length > 0
@@ -105,105 +109,165 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
             zoom: 10,
         });
 
-        mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        mapRef.current = map;
 
-        if (locations.length > 0) {
-            mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14 });
-        }
+        map.on('load', () => {
+            // Load pin images into the map sprite
+            const defaultImg = new Image();
+            defaultImg.onload = () => {
+                map.addImage('pin-default', defaultImg);
 
-        // Create markers and store refs
-        const markerMap = new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>();
-
-        locations.forEach(loc => {
-            const el = document.createElement('div');
-            el.className = 'marker';
-            el.style.cssText = PIN_DEFAULT;
-
-            el.addEventListener('mouseenter', () => {
-                if (el.dataset.highlighted !== 'true') {
-                    el.style.transform = 'scale(1.2)';
-                }
-            });
-            el.addEventListener('mouseleave', () => {
-                if (el.dataset.highlighted !== 'true') {
-                    el.style.transform = 'scale(1)';
-                }
-            });
-
-            const popupContent = `
-                <div style="padding: 8px; max-width: 220px;">
-                    <h4 style="font-weight: 600; margin-bottom: 4px; color: #111; font-size: 14px;">
-                        ${loc.serviceName || loc.name}
-                    </h4>
-                    ${loc.name && loc.serviceName && loc.name !== loc.serviceName
-                    ? `<p style="color: #666; font-size: 12px; margin-bottom: 8px;">${loc.name}</p>`
-                    : ''}
-                    ${loc.serviceId
-                    ? `<a href="/services/${loc.serviceId}" 
-                             style="color: #2563eb; font-size: 12px; text-decoration: none; display: inline-block; margin-top: 4px;">
-                             View service details →
-                           </a>`
-                    : `<a href="/services" 
-                             style="color: #2563eb; font-size: 12px; text-decoration: none; display: inline-block; margin-top: 4px;">
-                             Browse services →
-                           </a>`
-                }
-                </div>
-            `;
-
-            const popup = new maplibregl.Popup({ offset: [0, -PIN_H] }).setHTML(popupContent);
-            const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-                .setLngLat([loc.longitude, loc.latitude])
-                .setPopup(popup)
-                .addTo(mapRef.current!);
-
-            markerMap.set(loc.serviceId || loc.id, { marker, el });
+                const hlImg = new Image();
+                hlImg.onload = () => {
+                    map.addImage('pin-highlight', hlImg);
+                    addLayers();
+                };
+                hlImg.src = pinDataUrl('#f7cf56', '#c9a530');
+            };
+            defaultImg.src = pinDataUrl('#8F2D24', '#6b1f18');
         });
 
-        markersRef.current = markerMap;
+        function addLayers() {
+            const geojson = toGeoJSON(locations);
+
+            // Main pins source
+            map.addSource('pins', { type: 'geojson', data: geojson });
+
+            // Default pins layer
+            map.addLayer({
+                id: 'pins-layer',
+                type: 'symbol',
+                source: 'pins',
+                layout: {
+                    'icon-image': 'pin-default',
+                    'icon-size': 1,
+                    'icon-anchor': 'bottom',
+                    'icon-allow-overlap': true,
+                    'icon-ignore-placement': true,
+                },
+            });
+
+            // Highlighted pin source (single feature, updated on highlight change)
+            map.addSource('pin-highlight', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] },
+            });
+
+            map.addLayer({
+                id: 'pin-highlight-layer',
+                type: 'symbol',
+                source: 'pin-highlight',
+                layout: {
+                    'icon-image': 'pin-highlight',
+                    'icon-size': 1.25,
+                    'icon-anchor': 'bottom',
+                    'icon-allow-overlap': true,
+                    'icon-ignore-placement': true,
+                },
+            });
+
+            // Click handler — show popup
+            map.on('click', 'pins-layer', (e) => {
+                if (!e.features || e.features.length === 0) return;
+                const feature = e.features[0];
+                const coords = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+                const props = feature.properties;
+
+                // Remove existing popup
+                popupRef.current?.remove();
+
+                const linkHref = props.serviceId
+                    ? `/services/${props.serviceId}`
+                    : '/services';
+                const linkText = props.serviceId ? 'View service details →' : 'Browse services →';
+
+                const popup = new maplibregl.Popup({ offset: [0, -PIN_H] })
+                    .setLngLat(coords)
+                    .setHTML(`
+                        <div style="padding: 8px; max-width: 220px;">
+                            <h4 style="font-weight: 600; margin-bottom: 4px; color: #111; font-size: 14px;">
+                                ${props.name}
+                            </h4>
+                            ${props.locationName && props.locationName !== props.name
+                            ? `<p style="color: #666; font-size: 12px; margin-bottom: 8px;">${props.locationName}</p>`
+                            : ''}
+                            <a href="${linkHref}"
+                               style="color: #8F2D24; font-size: 12px; text-decoration: none; display: inline-block; margin-top: 4px;">
+                               ${linkText}
+                            </a>
+                        </div>
+                    `)
+                    .addTo(map);
+
+                popupRef.current = popup;
+            });
+
+            // Cursor pointer on hover
+            map.on('mouseenter', 'pins-layer', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'pins-layer', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Fit bounds after layers are added
+            if (locations.length > 0) {
+                map.fitBounds(bounds, { padding: 50, maxZoom: 14 });
+            }
+        }
 
         return () => {
-            mapRef.current?.remove();
+            popupRef.current?.remove();
+            map.remove();
             mapRef.current = null;
-            markersRef.current.clear();
         };
     }, [locations]);
 
-    // React to highlight changes — style the pin and fly to it
+    // React to highlight changes
     useEffect(() => {
-        const markers = markersRef.current;
+        const map = mapRef.current;
+        if (!map || !map.isStyleLoaded()) return;
 
-        // Reset all pins to default
-        markers.forEach(({ el }) => {
-            el.style.cssText = PIN_DEFAULT;
-            el.dataset.highlighted = 'false';
-        });
+        // Check that sources exist (layers loaded)
+        if (!map.getSource('pin-highlight')) return;
 
-        if (!highlightedId || !mapRef.current) return;
+        if (!highlightedId) {
+            // Clear highlight
+            (map.getSource('pin-highlight') as maplibregl.GeoJSONSource)
+                .setData({ type: 'FeatureCollection', features: [] });
+            return;
+        }
 
-        const entry = markers.get(highlightedId);
-        if (!entry) {
-            // No pin for this card — fit bounds to show all pins
+        // Find the highlighted location
+        const loc = locations.find(l => (l.serviceId || l.id) === highlightedId);
+        if (!loc) {
+            // No matching pin — reset view
             const bounds = new maplibregl.LngLatBounds();
-            markers.forEach(({ marker }) => bounds.extend(marker.getLngLat()));
+            locations.forEach(l => bounds.extend([l.longitude, l.latitude]));
             if (!bounds.isEmpty()) {
-                mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 14, duration: 800 });
+                map.fitBounds(bounds, { padding: 50, maxZoom: 14, duration: 800 });
             }
             return;
         }
 
-        // Highlight the pin
-        entry.el.style.cssText = PIN_HIGHLIGHTED;
-        entry.el.dataset.highlighted = 'true';
+        // Set highlight pin
+        (map.getSource('pin-highlight') as maplibregl.GeoJSONSource).setData({
+            type: 'FeatureCollection',
+            features: [{
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [loc.longitude, loc.latitude] },
+                properties: { id: loc.serviceId || loc.id, name: loc.serviceName || loc.name },
+            }],
+        });
 
-        // Fly to the highlighted pin
-        const lngLat = entry.marker.getLngLat();
-        mapRef.current.flyTo({
-            center: [lngLat.lng, lngLat.lat],
-            zoom: Math.max(mapRef.current.getZoom(), 14),
+        // Fly to highlighted pin
+        map.flyTo({
+            center: [loc.longitude, loc.latitude],
+            zoom: Math.max(map.getZoom(), 14),
             duration: 800,
         });
-    }, [highlightedId]);
+    }, [highlightedId, locations]);
 
     return (
         <div

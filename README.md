@@ -36,7 +36,7 @@ Built for [Open Referral](https://openreferral.org/) and compatible with the [UK
 - **Python 3.10+**
 - **Node.js 18+** (for the frontend)
 - An **Airtable** account with a base structured for HSDS data
-- An **Airtable Personal Access Token** with `data.records:read` scope
+- An **Airtable Personal Access Token** strictly limited to the `data.records:read` scope. **Do not use a full-access API Key.**
 
 ---
 
@@ -216,7 +216,7 @@ All configuration is via environment variables (loaded from `.env`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AIRTABLE_API_KEY` | *(required)* | Airtable Personal Access Token |
+| `AIRTABLE_API_KEY` | *(required)* | Airtable Personal Access Token (Must be Read-Only) |
 | `AIRTABLE_BASE_ID` | *(required)* | Airtable Base ID (`appXXXXXXXXX`) |
 | `SYNC_INTERVAL_MINUTES` | `15` | Minutes between background syncs |
 | `HOST` | `0.0.0.0` | API server bind address |
@@ -244,6 +244,9 @@ This is the simplest production deployment for a single server.
 ```bash
 # On your server (Ubuntu 22.04+ recommended)
 sudo apt update && sudo apt install -y python3-venv python3-pip nginx nodejs npm
+
+# Create a dedicated, unprivileged system user for security
+sudo useradd -r -s /bin/false hsds_user
 
 # Create application directory
 sudo mkdir -p /opt/mutualaid
@@ -284,7 +287,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
+User=hsds_user
 WorkingDirectory=/opt/mutualaid/backend
 ExecStart=/opt/mutualaid/backend/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8300
 Restart=always
@@ -304,7 +307,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
+User=hsds_user
 WorkingDirectory=/opt/mutualaid/frontend
 ExecStart=/usr/bin/node /opt/mutualaid/frontend/node_modules/.bin/next start -p 3100
 Restart=always
@@ -317,6 +320,9 @@ WantedBy=multi-user.target
 ```
 
 ```bash
+# Transfer ownership to our secure service user
+sudo chown -R hsds_user:hsds_user /opt/mutualaid
+
 sudo systemctl daemon-reload
 sudo systemctl enable manyc-api manyc-web
 sudo systemctl start manyc-api manyc-web
@@ -327,6 +333,9 @@ sudo systemctl start manyc-api manyc-web
 Create `/etc/nginx/sites-available/hsds`:
 
 ```nginx
+# Optional but recommended to prevent CPU exhaustion on wildcard SQLite searches
+# limit_req_zone $binary_remote_addr zone=hsds_api_limit:10m rate=5r/s;
+
 server {
     listen 80;
     server_name yourdomain.com;
@@ -346,6 +355,7 @@ server {
 
     # API
     location /api/ {
+        # limit_req zone=hsds_api_limit burst=10 nodelay;
         proxy_pass http://127.0.0.1:8080/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -355,7 +365,7 @@ server {
     }
 
     # API direct access (docs, openapi, services, etc.)
-    location ~ ^/(docs|redoc|openapi\.json|services|organizations|taxonomies|taxonomy_terms|service_at_locations|locations|map) {
+    location ~ ^/(docs|redoc|openapi\.json|services|organizations|taxonomies|taxonomy_terms|service_at_locations|locations|map)(/|$) {
         proxy_pass http://127.0.0.1:8300;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

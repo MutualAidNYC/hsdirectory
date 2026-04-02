@@ -558,7 +558,7 @@ function ResourceCard({ service, userLocation, onHover }: {
                             key={`need-${i}`}
                             colorScheme="coral"
                             size="sm"
-                            href={`/services?q=${encodeURIComponent(need)}`}
+                            href={`/services?category=${encodeURIComponent(need)}`}
                         >
                             {need}
                         </TagLink>
@@ -574,7 +574,7 @@ function ResourceCard({ service, userLocation, onHover }: {
                             key={`community-${i}`}
                             colorScheme="olive"
                             size="sm"
-                            href={`/services?q=${encodeURIComponent(community)}`}
+                            href={`/services?community=${encodeURIComponent(community)}`}
                         >
                             {community}
                         </TagLink>

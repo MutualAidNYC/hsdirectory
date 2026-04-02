@@ -12,7 +12,7 @@ Mutual Aid NYC service directory. Integrates Airtable data into a Human Services
 -   **GitHub:** `https://github.com/MutualAidNYC/hsdirectory`
 
 ## Deployment & Hosting
--   **Hosting:** Hetzner server (`root@178.156.245.46`).
+-   **Hosting:** Cloud VPS (Production IPs kept in secure vault).
 -   **Paths:**
     -   Backend: `/opt/mutualaid/backend`
     -   Frontend: `/opt/mutualaid/frontend`

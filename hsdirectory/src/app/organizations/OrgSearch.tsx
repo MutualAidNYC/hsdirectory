@@ -31,7 +31,7 @@ export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-xl">
+        <form onSubmit={handleSubmit} className="w-full max-w-xl">
             <div className="relative flex items-center">
                 <svg className="absolute left-3 w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

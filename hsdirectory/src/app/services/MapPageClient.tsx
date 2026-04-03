@@ -459,12 +459,15 @@ export default function MapPageClient({
                         </div>
                     ) : (
                         filteredServices.map(service => (
-                            <ResourceCard
-                                key={service.id}
-                                service={service}
-                                userLocation={userLocation}
-                                onHover={setHoveredServiceId}
-                            />
+                    <ResourceCard
+                        key={service.id}
+                        service={service}
+                        userLocation={userLocation}
+                        onViewOnMap={(id) => {
+                            setHoveredServiceId(id);
+                            setViewMode('map');
+                        }}
+                    />
                         ))
                     )}
                 </div>
@@ -483,10 +486,10 @@ export default function MapPageClient({
 /**
  * Resource card component
  */
-function ResourceCard({ service, userLocation, onHover }: {
+function ResourceCard({ service, userLocation, onViewOnMap }: {
     service: Service;
     userLocation: { lat: number; lng: number } | null;
-    onHover: (id: string | null) => void;
+    onViewOnMap: (id: string) => void;
 }) {
     const distance = (userLocation && service.latitude && service.longitude)
         ? haversineDistance(userLocation.lat, userLocation.lng, service.latitude, service.longitude)
@@ -494,9 +497,7 @@ function ResourceCard({ service, userLocation, onHover }: {
 
     return (
         <div
-            className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-4 hover:shadow-md hover:border-[var(--primary)]/40 transition-all cursor-pointer"
-            onMouseEnter={() => onHover(service.id)}
-            onMouseLeave={() => onHover(null)}
+            className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-4"
         >
             <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold text-[var(--foreground)] mb-2 line-clamp-2">
@@ -510,13 +511,24 @@ function ResourceCard({ service, userLocation, onHover }: {
             </div>
 
             {service.address && (
-                <p className="text-sm text-[var(--muted)] mb-2 flex items-start gap-2">
-                    <svg className="w-4 h-4 mt-0.5 flex-shrink-0" aria-label="address" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="line-clamp-2">{service.address}</span>
-                </p>
+                <div className="text-sm text-[var(--muted)] mb-2 flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                        <svg className="w-4 h-4 mt-0.5 flex-shrink-0" aria-label="address" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="line-clamp-2">{service.address}</span>
+                    </div>
+
+                    {service.latitude && service.longitude && (
+                        <button
+                            onClick={() => onViewOnMap(service.id)}
+                            className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[var(--card-border)] bg-[var(--section-alt)] text-xs font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+                        >
+                            View on map
+                        </button>
+                    )}
+                </div>
             )}
 
             {service.phone && (

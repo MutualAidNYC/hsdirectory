@@ -125,7 +125,7 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                     map.addImage('pin-highlight', hlImg);
                     addLayers();
                 };
-                hlImg.src = pinDataUrl('#f7cf56', '#c9a530');
+                hlImg.src = pinDataUrl('#f59e0b', '#b45309');
             };
             defaultImg.src = pinDataUrl('#8F2D24', '#6b1f18');
         });

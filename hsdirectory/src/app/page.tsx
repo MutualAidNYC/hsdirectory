@@ -119,7 +119,7 @@ export default async function Home() {
               </h2>
               <Link
                 href="/services"
-                className="text-[var(--primary)] hover:text-[var(--primary-hover)] font-medium transition-colorse"
+                className="text-[var(--primary)] hover:text-[var(--primary-hover)] font-medium transition-colorse underline hover:no-underline"
               >
                 View all resources →
               </Link>

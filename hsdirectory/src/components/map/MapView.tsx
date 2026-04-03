@@ -182,7 +182,7 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                 const linkHref = props.serviceId
                     ? `/services/${props.serviceId}`
                     : '/services';
-                const linkText = props.serviceId ? 'View service details →' : 'Browse services →';
+                const linkText = props.serviceId ? 'View resource details →' : 'Browse resources →';
 
                 const popup = new maplibregl.Popup({ offset: [0, -PIN_H] })
                     .setLngLat(coords)
@@ -192,13 +192,13 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                                 ${props.name}
                             </h4>
                             ${props.orgName 
-                            ? `<p style="color: #444; font-size: 13px; font-weight: 500; margin-bottom: 2px;">${props.orgName}</p>` 
+                            ? `<p style="color: #444; font-size: 13px; font-weight: 500; margin-bottom: 2px;">${props.orgName}</p>`
                             : ''}
                             ${props.locationName && props.locationName !== props.name
                             ? `<p style="color: #666; font-size: 12px; margin-bottom: 8px;">${props.locationName}</p>`
                             : ''}
                             <a href="${linkHref}"
-                               style="color: #8F2D24; font-size: 12px; text-decoration: none; display: inline-block; margin-top: 4px;">
+                               style="color: #8F2D24; font-size: 12px; text-decoration: underline; display: inline-block; margin-top: 4px;">
                                ${linkText}
                             </a>
                         </div>

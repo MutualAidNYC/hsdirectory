@@ -7,7 +7,7 @@ interface ServiceCardProps {
 
 /**
  * Card component for displaying service summary in lists.
- * Shows name, description, organization, and status.
+ * Shows name, description, and group.
  */
 export function ServiceCard({ service }: ServiceCardProps) {
     return (

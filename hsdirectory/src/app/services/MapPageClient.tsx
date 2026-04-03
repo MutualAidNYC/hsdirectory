@@ -459,15 +459,15 @@ export default function MapPageClient({
                         </div>
                     ) : (
                         filteredServices.map(service => (
-                    <ResourceCard
-                        key={service.id}
-                        service={service}
-                        userLocation={userLocation}
-                        onViewOnMap={(id) => {
-                            setHoveredServiceId(id);
-                            setViewMode('map');
-                        }}
-                    />
+                            <ResourceCard
+                                key={service.id}
+                                service={service}
+                                userLocation={userLocation}
+                                onViewOnMap={(id) => {
+                                    setHoveredServiceId(id);
+                                    setViewMode('map');
+                                }}
+                            />
                         ))
                     )}
                 </div>

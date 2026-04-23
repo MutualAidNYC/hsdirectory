@@ -90,9 +90,11 @@ a {
   color: var(--primary);
 }
 
+/* Focus styles that work on all background colors and removes the default browser outline to prevent doubling */
 *:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #ffffff,
+              0 0 0 4px var(--primary);
+  outline: none;
 }
 
 .line-clamp-2 {

@@ -162,7 +162,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                             </div>
                         ) : (
                             <div className="rounded-xl border border-[var(--card-border)] bg-[var(--section-alt)] p-8 text-center">
-                                <svg className="w-12 h-12 mx-auto text-[var(--muted)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-12 h-12 mx-auto text-[var(--muted)] mb-3" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -224,7 +224,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                 border border-[var(--card-border)] text-[var(--foreground)] opacity-70
                 hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                             Back to Groups

@@ -519,15 +519,12 @@ function ResourceCard({ service, userLocation, onViewOnMap }: {
                         </svg>
                         <span className="line-clamp-2">{service.address}</span>
                     </div>
-
-                    {service.latitude && service.longitude && (
-                        <button
-                            onClick={() => onViewOnMap(service.id)}
-                            className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[var(--card-border)] bg-[var(--section-alt)] text-xs font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white transition-colors"
-                        >
-                            View on map
-                        </button>
-                    )}
+                    <button
+                        onClick={() => onViewOnMap(service.id)}
+                        className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[var(--card-border)] bg-[var(--section-alt)] text-xs font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+                    >
+                        View on map
+                    </button>
                 </div>
             )}
 

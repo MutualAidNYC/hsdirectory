@@ -7,6 +7,11 @@ interface OrgSearchProps {
     initialQuery?: string;
 }
 
+/**
+ * Client-side search input for the groups page.
+ * Submitting navigates to /organizations?q=... which triggers
+ * a server-side re-fetch with the search parameter.
+ */
 export function OrgSearch({ initialQuery = '' }: OrgSearchProps) {
     const [query, setQuery] = useState(initialQuery);
     const router = useRouter();

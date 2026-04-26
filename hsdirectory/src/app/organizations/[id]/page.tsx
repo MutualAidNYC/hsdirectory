@@ -77,6 +77,32 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         // Non-critical — page renders without map
     }
 
+    // Fallback: if no service-level pins resolved, use the org's own locations.
+    // This covers orgs where the physical address is linked at the org level
+    // and not propagated down to each individual service record.
+    if (mapLocations.length === 0 && organization.locations?.length) {
+        mapLocations = organization.locations
+            .filter((loc: any) => loc.latitude && loc.longitude)
+            .map((loc: any) => ({
+                id: loc.id,
+                name: loc.addresses?.[0]
+                    ? [
+                          loc.addresses[0].address_1,
+                          loc.addresses[0].city,
+                          loc.addresses[0].state_province,
+                      ]
+                          .filter(Boolean)
+                          .join(", ")
+                    : loc.name,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                serviceName: organization.name,
+                serviceId: "",
+                address: loc.addresses?.[0]?.address_1 || loc.name,
+            }));
+    }
+
+
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Breadcrumb */}

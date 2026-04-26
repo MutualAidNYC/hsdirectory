@@ -59,6 +59,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
     }
 
     let mapLocations: MapPin[] = [];
+    let mapLocationLabel = "Resource Locations";
     try {
         const mapData = await getMapServices();
         const serviceIds = new Set(relatedServices.map((s: any) => s.id));
@@ -100,6 +101,8 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                 serviceId: "",
                 address: loc.addresses?.[0]?.address_1 || loc.name,
             }));
+        // Pins came from the org's address, not a specific service site
+        mapLocationLabel = "Group Locations";
     }
 
 
@@ -181,7 +184,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                             <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
                                 <div className="p-4 border-b border-[var(--card-border)]">
                                     <h3 className="font-semibold text-[var(--foreground)]">
-                                        Resource Locations ({mapLocations.length})
+                                        {mapLocationLabel} ({mapLocations.length})
                                     </h3>
                                 </div>
                                 <OrgLocationsMap locations={mapLocations} />

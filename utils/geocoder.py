@@ -63,11 +63,48 @@ class Geocoder:
         except Exception as e:
             logger.error(f"Failed to save cache: {e}")
     
+    # Regex patterns for secondary unit designators to strip from address_1.
+    # These confuse Nominatim and cause geocoding failures.
+    # NOTE: Patterns must NOT over-strip — they only match when a clear secondary
+    # unit keyword is present (Suite, Floor, Apt, etc.) followed by a designator.
+    _UNIT_PATTERNS = [
+        # "Suite 639", "Ste. 1B", "Apt 5", "Unit 2", "Room 3", "# 32", "#32"
+        r",?\s+(Suite|Ste\.?|Apt\.?|Unit|Room|Rm\.?)\s+[\w\-/]+\s*",
+        r",?\s+#\s*[\w\-/]+\s*",
+        # "3rd Floor", "2nd Fl.", "31st Floor" — ordinal MUST be followed by Floor/Fl.
+        # Strip the ordinal + Floor + anything that follows (e.g. "of Sterling Bank")
+        r",?\s+\d+(st|nd|rd|th)\s+Floor.*",
+        r",?\s+\d+(st|nd|rd|th)\s+Fl\.?.*",
+        # "Ground Floor of Sterling Bank" — strip Ground Floor + trailing text
+        r",?\s+Ground\s+Floor.*",
+        r",?\s+Basement.*",
+        # P.O. Box (rest of string), also when at start: "P.O. Box 3179"
+        r"(,\s*|\s*)P\.?O\.?\s+Box\s+\d+.*",
+    ]
+
+    def _normalize_address_line(self, address_1: str) -> str:
+        """Strip floor/suite/unit info from an address line before geocoding.
+
+        Why: Nominatim often fails on addresses like "25 Flatbush Ave, 3rd Floor"
+        but succeeds on "25 Flatbush Ave". Stripping secondary designators improves
+        hit rate significantly.
+        """
+        import re
+        result = address_1
+        for pattern in self._UNIT_PATTERNS:
+            result = re.sub(pattern, "", result, flags=re.IGNORECASE).strip()
+        # Remove trailing comma
+        result = result.rstrip(",").strip()
+        return result
+
     def _format_address(self, address: Dict[str, Any]) -> str:
-        """Format address dict into a geocoding query string."""
+        """Format address dict into a geocoding query string.
+
+        Normalizes address_1 to strip secondary unit designators that break Nominatim.
+        """
         parts = []
         if address.get("address_1"):
-            parts.append(address["address_1"])
+            parts.append(self._normalize_address_line(address["address_1"]))
         if address.get("city"):
             parts.append(address["city"])
         if address.get("state_province"):
@@ -76,7 +113,7 @@ class Geocoder:
             parts.append(address["postal_code"])
         if address.get("country"):
             parts.append(address["country"])
-        return ", ".join(parts)
+        return ", ".join(p for p in parts if p)
     
     async def _rate_limit(self):
         """Enforce rate limiting for Nominatim API."""
@@ -127,9 +164,34 @@ class Geocoder:
             
             if results:
                 result = results[0]
+                lat = float(result["lat"])
+                lon = float(result["lon"])
+
+                # Sanity check: reject results >200 miles from NYC.
+                # Addresses like "100 Pearl St, 19th Floor" without city context
+                # can resolve to wrong locations worldwide.
+                import math
+                def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+                    R = 3959.0
+                    dlat = math.radians(lat2 - lat1)
+                    dlon = math.radians(lon2 - lon1)
+                    a = (math.sin(dlat / 2) ** 2
+                         + math.cos(math.radians(lat1))
+                         * math.cos(math.radians(lat2))
+                         * math.sin(dlon / 2) ** 2)
+                    return R * 2 * math.asin(math.sqrt(a))
+
+                dist_from_nyc = _haversine(lat, lon, 40.7128, -74.0060)
+                if dist_from_nyc > 200:
+                    logger.warning(
+                        f"Rejecting geocode for {address_id}: {query[:50]} "
+                        f"({dist_from_nyc:.0f} miles from NYC)"
+                    )
+                    return None
+
                 geocoded = {
-                    "latitude": float(result["lat"]),
-                    "longitude": float(result["lon"]),
+                    "latitude": lat,
+                    "longitude": lon,
                     "formatted_address": query,
                     "geocoded_at": datetime.utcnow().isoformat(),
                 }

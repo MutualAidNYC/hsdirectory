@@ -76,13 +76,17 @@ async def get_map_services():
     filter_formula = None
     if settings.published_status_value:
         filter_formula = f"{{status}}='{settings.published_status_value}'"
-    
+
     services = await client.list_records("services", filter_formula=filter_formula)
-    
+
     # Fetch addresses and locations for coordinate lookup
     addresses = await client.list_records("addresses")
     locations = await client.list_records("locations")
-    
+
+    # Fetch service_at_location junction records to resolve location for services
+    # that don't have a direct `locations` link on the service record itself.
+    service_at_locs = await client.list_records("service_at_location")
+
     # Fetch phones and organizations
     phones = await client.list_records("phones")
     organizations = await client.list_records("organizations")
@@ -114,7 +118,7 @@ async def get_map_services():
             "longitude": fields.get("longitude"),
             "address_ids": fields.get("addresses", []),
         }
-    
+
     address_lookup = {}
     for record in addresses:
         fields = record.get("fields", {})
@@ -128,7 +132,19 @@ async def get_map_services():
             "formatted": ", ".join(p for p in addr_parts if p),
             "location_ids": fields.get("location", []),
         }
-    
+
+    # Build a lookup: service_airtable_id -> list of location_ids
+    # via the service_at_location junction table.
+    sal_location_lookup: dict = {}
+    for record in service_at_locs:
+        fields = record.get("fields", {})
+        service_ids = fields.get("services", []) or []
+        loc_ids = fields.get("locations", []) or []
+        for sid in service_ids:
+            if sid not in sal_location_lookup:
+                sal_location_lookup[sid] = []
+            sal_location_lookup[sid].extend(loc_ids)
+
     phone_lookup = {}
     for record in phones:
         fields = record.get("fields", {})
@@ -157,45 +173,62 @@ async def get_map_services():
         latitude = None
         longitude = None
         address = None
-        
-        # Try to get location from service_at_location or locations
-        location_ids = fields.get("locations", []) or []
-        for loc_id in location_ids:
-            if loc_id in location_lookup:
-                loc = location_lookup[loc_id]
-                # Extract first linked address
-                for addr_id in loc.get("address_ids", []):
-                    if addr_id in address_lookup:
-                        address = address_lookup[addr_id].get("formatted")
-                        break
-                if not address:
-                    address = loc.get("name")
-                    
-                if loc.get("latitude") and loc.get("longitude"):
-                    latitude = float(loc["latitude"])
-                    longitude = float(loc["longitude"])
+
+        def _resolve_location(loc_id: str) -> tuple:
+            """Resolve lat/lng/address from a location record ID.
+
+            Returns (latitude, longitude, address_str) or (None, None, None).
+            """
+            if loc_id not in location_lookup:
+                return None, None, None
+            loc = location_lookup[loc_id]
+            # Extract first linked address string
+            addr_str = None
+            for aid in loc.get("address_ids", []):
+                if aid in address_lookup:
+                    addr_str = address_lookup[aid].get("formatted")
                     break
-                else:
-                    # Fallback to geocache for the linked address
-                    for addr_id in loc.get("address_ids", []):
-                        if addr_id in geocache:
-                            geo = geocache[addr_id]
-                            if geo and "latitude" in geo and "longitude" in geo:
-                                latitude = float(geo["latitude"])
-                                longitude = float(geo["longitude"])
-                                break
-                    if latitude:
-                        break
-        
-        # Fallback to first address with location
+            if not addr_str:
+                addr_str = loc.get("name")
+
+            # Direct coordinates on the location record
+            if loc.get("latitude") and loc.get("longitude"):
+                return float(loc["latitude"]), float(loc["longitude"]), addr_str
+
+            # Fallback: geocache keyed on each linked address record ID
+            for aid in loc.get("address_ids", []):
+                if aid in geocache:
+                    geo = geocache[aid]
+                    if geo and "latitude" in geo and "longitude" in geo:
+                        return float(geo["latitude"]), float(geo["longitude"]), addr_str
+
+            return None, None, addr_str
+
+        # Priority 1: locations linked via service_at_location junction table
+        # (HSDS-recommended pattern for service→location association)
+        sal_loc_ids = sal_location_lookup.get(record["id"], [])
+        for loc_id in sal_loc_ids:
+            lat, lng, addr = _resolve_location(loc_id)
+            if lat and lng:
+                latitude, longitude, address = lat, lng, addr
+                break
+
+        # Priority 2: locations linked directly on the service record
         if not latitude:
-            address_ids = fields.get("addresses", []) or []
-            for addr_id in address_ids:
+            for loc_id in (fields.get("locations", []) or []):
+                lat, lng, addr = _resolve_location(loc_id)
+                if lat and lng:
+                    latitude, longitude, address = lat, lng, addr
+                    break
+
+        # Priority 3: addresses linked directly on the service record
+        if not latitude:
+            for addr_id in (fields.get("addresses", []) or []):
                 if addr_id in address_lookup:
                     addr = address_lookup[addr_id]
                     if not address:
                         address = addr.get("formatted")
-                    # Try to get coords from linked location
+                    # Try via linked location
                     for loc_id in addr.get("location_ids", []):
                         if loc_id in location_lookup:
                             loc = location_lookup[loc_id]
@@ -205,8 +238,7 @@ async def get_map_services():
                                 break
                     if latitude:
                         break
-                    
-                    # Try fallback to geocache
+                    # Geocache fallback
                     if addr_id in geocache:
                         geo = geocache[addr_id]
                         if geo and "latitude" in geo and "longitude" in geo:

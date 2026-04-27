@@ -103,10 +103,27 @@ async def get_map_services():
     location_lookup = {}
     for record in locations:
         fields = record.get("fields", {})
+        # Coordinates may be plain floats ("latitude"/"longitude") or Airtable
+        # lookup array fields ("tmp-latitude"/"tmp-longitude"). Handle both.
+        def _extract_coord(plain_key: str, lookup_key: str) -> Optional[float]:
+            val = fields.get(plain_key)
+            if val is not None:
+                try:
+                    return float(val)
+                except (TypeError, ValueError):
+                    pass
+            arr = fields.get(lookup_key)
+            if arr and isinstance(arr, list) and len(arr) > 0:
+                try:
+                    return float(arr[0])
+                except (TypeError, ValueError):
+                    pass
+            return None
+
         location_lookup[record["id"]] = {
             "name": fields.get("name"),
-            "latitude": fields.get("latitude"),
-            "longitude": fields.get("longitude"),
+            "latitude": _extract_coord("latitude", "tmp-latitude"),
+            "longitude": _extract_coord("longitude", "tmp-longitude"),
             "address_ids": fields.get("addresses", []),
         }
 

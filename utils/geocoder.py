@@ -170,17 +170,7 @@ class Geocoder:
                 # Sanity check: reject results >200 miles from NYC.
                 # Addresses like "100 Pearl St, 19th Floor" without city context
                 # can resolve to wrong locations worldwide.
-                import math
-                def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-                    R = 3959.0
-                    dlat = math.radians(lat2 - lat1)
-                    dlon = math.radians(lon2 - lon1)
-                    a = (math.sin(dlat / 2) ** 2
-                         + math.cos(math.radians(lat1))
-                         * math.cos(math.radians(lat2))
-                         * math.sin(dlon / 2) ** 2)
-                    return R * 2 * math.asin(math.sqrt(a))
-
+                from utils.haversine import haversine as _haversine
                 dist_from_nyc = _haversine(lat, lon, 40.7128, -74.0060)
                 if dist_from_nyc > 200:
                     logger.warning(

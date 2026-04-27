@@ -105,7 +105,6 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
         mapLocationLabel = "Group Locations";
     }
 
-
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Breadcrumb */}

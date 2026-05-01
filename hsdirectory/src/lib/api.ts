@@ -5,7 +5,20 @@
  * All methods handle pagination and error states.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+/**
+ * Resolve the correct API base URL.
+ *
+ * Server-side (SSR/RSC): use INTERNAL_API_URL to hit the FastAPI backend
+ * directly without looping back through the public Nginx proxy, which avoids
+ * DNS round-trips and prevents 504 timeouts on detail pages.
+ *
+ * Client-side (browser): use NEXT_PUBLIC_API_URL (the public-facing URL that
+ * goes through Nginx) because the browser cannot reach the internal server IP.
+ */
+const API_URL =
+  typeof window === 'undefined'
+    ? (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080')
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
 
 /**
  * HSDS Service type based on HSDS 3.0 specification

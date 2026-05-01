@@ -3,21 +3,12 @@ Map Services API endpoint.
 
 Serves service data with location info and filter categories for map page.
 """
-import math
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+from utils.haversine import haversine
 
 router = APIRouter(prefix="/map", tags=["map"])
-
-def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Calculate the great circle distance in miles between two points on the earth."""
-    R = 3959.0 # miles
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    return R * c
 
 
 
@@ -112,10 +103,27 @@ async def get_map_services():
     location_lookup = {}
     for record in locations:
         fields = record.get("fields", {})
+        # Coordinates may be plain floats ("latitude"/"longitude") or Airtable
+        # lookup array fields ("tmp-latitude"/"tmp-longitude"). Handle both.
+        def _extract_coord(plain_key: str, lookup_key: str) -> Optional[float]:
+            val = fields.get(plain_key)
+            if val is not None:
+                try:
+                    return float(val)
+                except (TypeError, ValueError):
+                    pass
+            arr = fields.get(lookup_key)
+            if arr and isinstance(arr, list) and len(arr) > 0:
+                try:
+                    return float(arr[0])
+                except (TypeError, ValueError):
+                    pass
+            return None
+
         location_lookup[record["id"]] = {
             "name": fields.get("name"),
-            "latitude": fields.get("latitude"),
-            "longitude": fields.get("longitude"),
+            "latitude": _extract_coord("latitude", "tmp-latitude"),
+            "longitude": _extract_coord("longitude", "tmp-longitude"),
             "address_ids": fields.get("addresses", []),
         }
 
@@ -154,6 +162,41 @@ async def get_map_services():
     need_categories = set()
     community_categories = set()
     
+    def _resolve_location(
+        loc_id: str,
+        location_lookup: dict,
+        address_lookup: dict,
+        geocache: dict,
+    ) -> tuple:
+        """Resolve lat/lng/address from a location record ID.
+
+        Returns (latitude, longitude, address_str) or (None, None, None).
+        """
+        if loc_id not in location_lookup:
+            return None, None, None
+        loc = location_lookup[loc_id]
+        # Extract first linked address string
+        addr_str = None
+        for aid in loc.get("address_ids", []):
+            if aid in address_lookup:
+                addr_str = address_lookup[aid].get("formatted")
+                break
+        if not addr_str:
+            addr_str = loc.get("name")
+
+        # Direct coordinates on the location record
+        if loc.get("latitude") and loc.get("longitude"):
+            return float(loc["latitude"]), float(loc["longitude"]), addr_str
+
+        # Fallback: geocache keyed on each linked address record ID
+        for aid in loc.get("address_ids", []):
+            if aid in geocache:
+                geo = geocache[aid]
+                if geo and "latitude" in geo and "longitude" in geo:
+                    return float(geo["latitude"]), float(geo["longitude"]), addr_str
+
+        return None, None, addr_str
+
     # Build service list
     map_services = []
     
@@ -174,41 +217,11 @@ async def get_map_services():
         longitude = None
         address = None
 
-        def _resolve_location(loc_id: str) -> tuple:
-            """Resolve lat/lng/address from a location record ID.
-
-            Returns (latitude, longitude, address_str) or (None, None, None).
-            """
-            if loc_id not in location_lookup:
-                return None, None, None
-            loc = location_lookup[loc_id]
-            # Extract first linked address string
-            addr_str = None
-            for aid in loc.get("address_ids", []):
-                if aid in address_lookup:
-                    addr_str = address_lookup[aid].get("formatted")
-                    break
-            if not addr_str:
-                addr_str = loc.get("name")
-
-            # Direct coordinates on the location record
-            if loc.get("latitude") and loc.get("longitude"):
-                return float(loc["latitude"]), float(loc["longitude"]), addr_str
-
-            # Fallback: geocache keyed on each linked address record ID
-            for aid in loc.get("address_ids", []):
-                if aid in geocache:
-                    geo = geocache[aid]
-                    if geo and "latitude" in geo and "longitude" in geo:
-                        return float(geo["latitude"]), float(geo["longitude"]), addr_str
-
-            return None, None, addr_str
-
         # Priority 1: locations linked via service_at_location junction table
         # (HSDS-recommended pattern for service→location association)
         sal_loc_ids = sal_location_lookup.get(record["id"], [])
         for loc_id in sal_loc_ids:
-            lat, lng, addr = _resolve_location(loc_id)
+            lat, lng, addr = _resolve_location(loc_id, location_lookup, address_lookup, geocache)
             if lat and lng:
                 latitude, longitude, address = lat, lng, addr
                 break
@@ -216,7 +229,7 @@ async def get_map_services():
         # Priority 2: locations linked directly on the service record
         if not latitude:
             for loc_id in (fields.get("locations", []) or []):
-                lat, lng, addr = _resolve_location(loc_id)
+                lat, lng, addr = _resolve_location(loc_id, location_lookup, address_lookup, geocache)
                 if lat and lng:
                     latitude, longitude, address = lat, lng, addr
                     break

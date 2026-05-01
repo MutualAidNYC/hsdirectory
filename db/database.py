@@ -11,7 +11,18 @@ from contextlib import asynccontextmanager
 
 DATABASE_PATH = Path(__file__).parent.parent / "data" / "hsds_cache.db"
 
+ALLOWED_TABLES = {
+    "organizations", "services", "locations", "service_at_locations",
+    "taxonomies", "taxonomy_terms", "phones", "addresses", "contacts",
+    "schedules", "languages", "programs", "service_areas", "funding",
+    "cost_options", "required_documents", "accessibility", "sync_metadata",
+    "services_fts"
+}
 
+def _validate_table(table: str) -> None:
+    """Validate that a table name is in the allowed safelist to prevent SQL injection."""
+    if table not in ALLOWED_TABLES:
+        raise ValueError(f"Invalid table name: {table}")
 async def init_db():
     """Initialize the database with required tables."""
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -215,6 +226,7 @@ async def get_db():
 
 async def upsert_record(table: str, record_id: str, airtable_id: str, data: Dict[str, Any], **extra_columns):
     """Insert or update a record in the database."""
+    _validate_table(table)
     async with get_db() as db:
         columns = ["id", "airtable_id", "data"]
         values = [record_id, airtable_id, json.dumps(data)]
@@ -227,23 +239,20 @@ async def upsert_record(table: str, record_id: str, airtable_id: str, data: Dict
         column_str = ", ".join(columns)
         updates = ", ".join([f"{col}=excluded.{col}" for col in columns[1:]])
         
-        await db.execute(
-            f"""
+        query = f"""
             INSERT INTO {table} ({column_str}) VALUES ({placeholders})
             ON CONFLICT(id) DO UPDATE SET {updates}, updated_at=CURRENT_TIMESTAMP
-            """,
-            values
-        )
+            """  # nosec B608
+        await db.execute(query, values)
         await db.commit()
 
 
 async def get_record(table: str, record_id: str) -> Optional[Dict[str, Any]]:
     """Get a single record by ID."""
+    _validate_table(table)
     async with get_db() as db:
-        cursor = await db.execute(
-            f"SELECT data FROM {table} WHERE id = ?",
-            [record_id]
-        )
+        query = f"SELECT data FROM {table} WHERE id = ?"  # nosec B608
+        cursor = await db.execute(query, [record_id])
         row = await cursor.fetchone()
         if row:
             return json.loads(row["data"])
@@ -258,10 +267,11 @@ async def get_records(
     filters: Optional[Dict[str, str]] = None
 ) -> tuple[List[Dict[str, Any]], int]:
     """Get paginated records with optional filtering."""
+    _validate_table(table)
     async with get_db() as db:
         # Base query
-        base_query = f"SELECT data FROM {table}"
-        count_query = f"SELECT COUNT(*) FROM {table}"
+        base_query = f"SELECT data FROM {table}"  # nosec B608
+        count_query = f"SELECT COUNT(*) FROM {table}"  # nosec B608
         where_clauses = []
         params = []
         
@@ -327,8 +337,10 @@ async def search_services(
 
 async def get_table_count(table: str) -> int:
     """Get the total number of records in a table."""
+    _validate_table(table)
     async with get_db() as db:
-        cursor = await db.execute(f"SELECT COUNT(*) FROM {table}")
+        query = f"SELECT COUNT(*) FROM {table}"  # nosec B608
+        cursor = await db.execute(query)
         row = await cursor.fetchone()
         return row[0] if row else 0
 

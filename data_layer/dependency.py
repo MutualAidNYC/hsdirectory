@@ -5,9 +5,10 @@ from models.airtable import (
     LocationResponse,
     PhoneResponse,
     ScheduleResponse,
+    ServiceAtLocationResponse,
     ServiceResponse,
-    ServiceAtLocationResponse
 )
+
 
 def get_service_table() -> AirtableData:
     return AirtableData(model_class=ServiceResponse)

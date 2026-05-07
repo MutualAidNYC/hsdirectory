@@ -1,16 +1,17 @@
+
 from config import Settings
 from data_layer.data import DataEntity, Filter
-from models.hsds import ServiceAtLocation, Location, Address, Contact, Phone, Schedule
 from models.airtable import (
-    ServiceResponse,
-    ServiceAtLocationResponse,
-    LocationResponse,
     AddressResponse,
     ContactResponse,
+    LocationResponse,
     PhoneResponse,
     ScheduleResponse,
+    ServiceAtLocationResponse,
+    ServiceResponse,
 )
-from typing import List, Optional
+from models.hsds import Location, ServiceAtLocation
+
 
 def list_service_at_locations(
     service_at_locations_table: DataEntity[ServiceAtLocationResponse],
@@ -24,7 +25,7 @@ def list_service_at_locations(
     page: int = 1,
     per_page: int = 20,
     full: bool = False,
-) -> List[ServiceAtLocation]:
+) -> list[ServiceAtLocation]:
     services_at_locations = service_at_locations_table.list()
     services = services_table.list(
         filter=[
@@ -62,7 +63,7 @@ def get_service_at_locations(
     contacts_table: DataEntity[ContactResponse],
     phones_table: DataEntity[PhoneResponse],
     schedule_table: DataEntity[ScheduleResponse],
-) -> Optional[ServiceAtLocation]:
+) -> ServiceAtLocation | None:
     service_at_locations = service_at_locations_table.get(id=sal_id)
     if not service_at_locations:
         return None

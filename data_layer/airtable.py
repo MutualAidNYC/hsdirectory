@@ -1,8 +1,10 @@
-import httpx
-from config import get_settings
-from data_layer.data import DataEntity, Table, Filter, TableColumn
 from time import sleep
-from typing import Any, Type, Optional
+from typing import Any
+
+import httpx
+
+from config import get_settings
+from data_layer.data import DataEntity, Filter, Table, TableColumn
 
 BASE_RETRY_LIMIT = 5
 BASE_RATE_LIMIT_DELAY = 0.2
@@ -31,20 +33,20 @@ TABLE_IDS = {
 
 
 class AirtableData[T](DataEntity[T]):
-    def __init__(self, model_class: Type[T], table: Table, id_columns: list[TableColumn] = ['RECORD_ID()']):
+    def __init__(self, model_class: type[T], table: Table, id_columns: list[TableColumn]):
         settings = get_settings()
         self.base_id = settings.airtable_base_id
         self.api_key = settings.airtable_api_key
         self._rate_limit_delay = BASE_RATE_LIMIT_DELAY
         self.table = table
-        self.id_columns = id_columns
+        self.id_columns = id_columns or ['RECORD_ID()']
         super.__init__(model_class)
 
     def _make_request(
         self,
         endpoint: str,
         params: dict[str, Any],
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> list[dict[str, Any]]:
         attempts = 0
         all_records = []
@@ -80,8 +82,8 @@ class AirtableData[T](DataEntity[T]):
 
     def list(
         self,
-        filters: Optional[list[Filter]] = None,
-        limit: Optional[int] = None,
+        filters: list[Filter] | None = None,
+        limit: int | None = None,
     ) -> list[T]:
         table_id = TABLE_IDS.get(self.table.name)
         params = {}
@@ -105,7 +107,7 @@ class AirtableData[T](DataEntity[T]):
     def get(
         self,
         id: int,
-    ) -> Optional[T]:
+    ) -> T | None:
         return self.list(
             filters=[Filter(key=col, value=id) for col in self.id_columns]
         )[0]

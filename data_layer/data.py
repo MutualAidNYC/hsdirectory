@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+
 from pydantic import BaseModel
-from typing import Dict, List, Any, Optional, Type
+
 
 class Table(BaseModel):
     name: str
@@ -13,14 +14,14 @@ class Filter(BaseModel):
     value: str
 
 class DataEntity[T: BaseModel](ABC):
-    def __init__(self, model_class: Type[T]):
+    def __init__(self, model_class: type[T]):
         self.model_class = model_class
 
     @abstractmethod
     def list(
         self,
-        filters: Optional[list[Filter]] = None,
-        max: Optional[int] = None,
+        filters: list[Filter] | None = None,
+        max: int | None = None,
     ) -> list[T]:
         ...
 
@@ -28,7 +29,7 @@ class DataEntity[T: BaseModel](ABC):
     def get(
         self,
         id: int,
-    ) -> Optional[T]:
+    ) -> T | None:
         ...
 
     @abstractmethod
@@ -39,21 +40,21 @@ class DataEntity[T: BaseModel](ABC):
         ...
 
 class TestData[T](DataEntity[T]):
-    def __init__(self, model_class: Type[T], data: Dict[str, T]):
+    def __init__(self, model_class: type[T], data: dict[str, T]):
         super().__init__(model_class)
         self.data = data
 
     def list(
         self,
-        filters: Optional[list[Filter]] = None,
-        max: Optional[int] = None,
+        filters: list[Filter] | None = None,
+        max: int | None = None,
     ) -> list[T]:
         return list(self.data.values())
 
     def get(
         self,
         id: int,
-    ) -> Optional[T]:
+    ) -> T | None:
         return self.data.get(id)
 
     def get_bulk(

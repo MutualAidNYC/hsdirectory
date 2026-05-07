@@ -151,8 +151,9 @@ app.post("/sync/geocache", async (c) => {
 });
 
 /**
- * Google Geocoding API — geocode all addresses not yet in geocache.
- * Runs async via waitUntil to avoid CPU timeout on free plan.
+ * Google Geocoding API — geocode addresses not yet in geocache.
+ * Processes up to 10 per call (free plan: 50 subrequest limit).
+ * Call repeatedly until remaining === 0.
  */
 app.post("/sync/geocode", async (c) => {
   const denied = requireSyncAuth(c);
@@ -161,87 +162,101 @@ app.post("/sync/geocode", async (c) => {
   if (!apiKey) return c.json({ error: "GOOGLE_GEOCODING_API_KEY not configured" }, 400);
 
   const db = c.env.DB;
+  const BATCH_SIZE = 10;
 
-  // Find addresses not yet geocoded
+  // Find addresses not yet geocoded (limited batch)
   const { results: addresses } = await db
     .prepare(
       `SELECT a.id, a.data FROM addresses a
        LEFT JOIN geocache g ON a.id = g.address_id
-       WHERE g.address_id IS NULL`,
+       WHERE g.address_id IS NULL
+       LIMIT ?1`,
     )
+    .bind(BATCH_SIZE)
     .all<{ id: string; data: string }>();
 
   if (!addresses || addresses.length === 0) {
-    return c.json({ status: "completed", message: "All addresses already geocoded", new: 0 });
+    return c.json({ status: "completed", message: "All addresses already geocoded", remaining: 0 });
   }
 
-  // Run geocoding in background (free plan allows 30s CPU in waitUntil)
-  c.executionCtx.waitUntil(
-    (async () => {
-      let geocoded = 0;
-      let failed = 0;
+  let geocoded = 0;
+  let failed = 0;
 
-      for (const row of addresses) {
-        const fields = JSON.parse(row.data) as Record<string, unknown>;
-        const parts = [
-          fields.address_1,
-          fields.city,
-          fields.state_province,
-          fields.postal_code,
-        ].filter(Boolean).map(String);
-        const query = parts.join(", ");
-        if (!query.trim()) { failed++; continue; }
+  for (const row of addresses) {
+    const fields = JSON.parse(row.data) as Record<string, unknown>;
+    const parts = [
+      fields.address_1,
+      fields.city,
+      fields.state_province,
+      fields.postal_code,
+    ].filter(Boolean).map(String);
+    const query = parts.join(", ");
+    if (!query.trim()) { failed++; continue; }
 
-        try {
-          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
-          const resp = await fetch(url);
-          const data = (await resp.json()) as {
-            status: string;
-            results: Array<{ geometry: { location: { lat: number; lng: number } }; formatted_address: string }>;
-          };
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
+      const resp = await fetch(url);
+      const data = (await resp.json()) as {
+        status: string;
+        results: Array<{ geometry: { location: { lat: number; lng: number } }; formatted_address: string }>;
+      };
 
-          if (data.status === "OK" && data.results.length > 0) {
-            const loc = data.results[0].geometry.location;
+      if (data.status === "OK" && data.results.length > 0) {
+        const loc = data.results[0].geometry.location;
 
-            // NYC proximity check: reject results > 200 miles from NYC
-            const R = 3958.8;
-            const dLat = (loc.lat - 40.7128) * Math.PI / 180;
-            const dLon = (loc.lng - (-74.006)) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(40.7128 * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) *
-              Math.sin(dLon / 2) ** 2;
-            const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        // NYC proximity check: reject results > 200 miles from NYC
+        const R = 3958.8;
+        const dLat = (loc.lat - 40.7128) * Math.PI / 180;
+        const dLon = (loc.lng - (-74.006)) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+          Math.cos(40.7128 * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) *
+          Math.sin(dLon / 2) ** 2;
+        const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-            if (dist > 200) {
-              console.log(`Rejected ${row.id}: ${query.slice(0, 50)} (${dist.toFixed(0)}mi from NYC)`);
-              failed++;
-              continue;
-            }
-
-            await db
-              .prepare(
-                "INSERT OR REPLACE INTO geocache (address_id, latitude, longitude, formatted_address, geocoded_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-              )
-              .bind(row.id, loc.lat, loc.lng, data.results[0].formatted_address, new Date().toISOString())
-              .run();
-            geocoded++;
-          } else {
-            console.log(`No result for ${row.id}: ${query.slice(0, 50)} (${data.status})`);
-            failed++;
-          }
-        } catch (err) {
-          console.error(`Geocode error for ${row.id}:`, err);
+        if (dist > 200) {
+          console.log(`Rejected ${row.id}: ${query.slice(0, 50)} (${dist.toFixed(0)}mi from NYC)`);
+          // Still insert a zero-coord record to mark as processed (won't match map queries)
+          await db
+            .prepare("INSERT OR REPLACE INTO geocache (address_id, latitude, longitude, formatted_address, geocoded_at) VALUES (?1, 0, 0, ?2, ?3)")
+            .bind(row.id, `REJECTED: ${dist.toFixed(0)}mi from NYC`, new Date().toISOString())
+            .run();
           failed++;
+          continue;
         }
+
+        await db
+          .prepare(
+            "INSERT OR REPLACE INTO geocache (address_id, latitude, longitude, formatted_address, geocoded_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+          )
+          .bind(row.id, loc.lat, loc.lng, data.results[0].formatted_address, new Date().toISOString())
+          .run();
+        geocoded++;
+      } else {
+        console.log(`No result for ${row.id}: ${query.slice(0, 50)} (${data.status})`);
+        // Mark as processed with zero coords
+        await db
+          .prepare("INSERT OR REPLACE INTO geocache (address_id, latitude, longitude, formatted_address, geocoded_at) VALUES (?1, 0, 0, ?2, ?3)")
+          .bind(row.id, `NO_RESULT: ${data.status}`, new Date().toISOString())
+          .run();
+        failed++;
       }
-      console.log(`Geocoding complete: ${geocoded} geocoded, ${failed} failed out of ${addresses.length}`);
-    })(),
-  );
+    } catch (err) {
+      console.error(`Geocode error for ${row.id}:`, err);
+      failed++;
+    }
+  }
+
+  // Count remaining
+  const remaining = await db
+    .prepare("SELECT COUNT(*) as cnt FROM addresses a LEFT JOIN geocache g ON a.id = g.address_id WHERE g.address_id IS NULL")
+    .first<{ cnt: number }>();
 
   return c.json({
-    status: "geocoding_started",
-    addresses_to_process: addresses.length,
-    message: "Running in background. Check GET /sync/geocache for progress.",
+    status: "batch_completed",
+    batch_size: addresses.length,
+    geocoded,
+    failed,
+    remaining: remaining?.cnt ?? 0,
   });
 });
 

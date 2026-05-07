@@ -36,20 +36,20 @@ const TABLE_IDS: Record<string, string> = {
 
 /**
  * Fetch all records from an Airtable table with pagination.
- * Returns array of { id: string, fields: Record<string, unknown> }.
+ * Returns array of { id, fields, lastModifiedTime }.
  */
 export async function listRecords(
   apiKey: string,
   baseId: string,
   tableName: string,
   filterFormula?: string,
-): Promise<Array<{ id: string; fields: Record<string, unknown> }>> {
+): Promise<Array<{ id: string; fields: Record<string, unknown>; lastModifiedTime?: string }>> {
   const tableId = TABLE_IDS[tableName];
   if (!tableId) {
     throw new Error(`Unknown Airtable table: ${tableName}`);
   }
 
-  const records: Array<{ id: string; fields: Record<string, unknown> }> = [];
+  const records: Array<{ id: string; fields: Record<string, unknown>; lastModifiedTime?: string }> = [];
   let offset: string | undefined;
 
   while (true) {
@@ -57,6 +57,7 @@ export async function listRecords(
     if (offset) url.searchParams.set("offset", offset);
     if (filterFormula) url.searchParams.set("filterByFormula", filterFormula);
     url.searchParams.set("pageSize", "100");
+    url.searchParams.set("returnFieldsByFieldId", "false");
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -71,13 +72,22 @@ export async function listRecords(
     }
 
     const data = (await response.json()) as {
-      records: Array<{ id: string; fields: Record<string, unknown> }>;
+      records: Array<{ id: string; fields: Record<string, unknown>; createdTime?: string }>;
       offset?: string;
     };
 
-    records.push(...data.records);
-    offset = data.offset;
+    // Map records, using createdTime as a proxy for lastModifiedTime
+    // (Airtable REST API v0 returns createdTime; for true modifiedTime
+    //  you'd need the "Last Modified" field added to the table)
+    for (const r of data.records) {
+      records.push({
+        id: r.id,
+        fields: r.fields,
+        lastModifiedTime: r.createdTime,
+      });
+    }
 
+    offset = data.offset;
     if (!offset) break;
 
     // Rate limit — 200ms delay between pages

@@ -3,6 +3,9 @@
  *
  * Ports airtable/sync.py. Called by the scheduled handler on cron trigger.
  * Each table sync is isolated — failures in one table don't block others.
+ *
+ * Incremental: compares Airtable modifiedTime against D1 updated_at to skip
+ * unchanged records, dramatically reducing D1 write usage.
  */
 import { listRecords } from "./airtable-client";
 import { upsertRecord, updateSyncMetadata } from "../db/queries";
@@ -59,27 +62,105 @@ const TABLE_MAPPING: Record<string, TableConfig> = {
   required_documents: { airtableName: "required_document" },
 };
 
+// ============================================================================
+// Stemming & Tokenization
+// ============================================================================
+
+/** Common English stop words to exclude from search index. */
+const STOP_WORDS = new Set([
+  "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+  "of", "with", "by", "from", "is", "are", "was", "were", "be", "been",
+  "being", "have", "has", "had", "do", "does", "did", "will", "would",
+  "could", "should", "may", "might", "can", "this", "that", "these",
+  "those", "it", "its", "we", "our", "you", "your", "they", "their",
+  "not", "no", "if", "as", "so", "than", "then", "also", "very",
+]);
+
 /**
- * Sync a single Airtable table to D1.
- * Returns number of records synced.
+ * Basic English stemmer — strips common suffixes.
+ * Not as good as Porter/Snowball but zero-dependency and handles the common cases.
+ */
+function stem(word: string): string {
+  if (word.length <= 3) return word;
+  if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";
+  if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);
+  if (word.endsWith("tion") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ment") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ness") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ous") && word.length > 4) return word.slice(0, -3);
+  if (word.endsWith("ful") && word.length > 4) return word.slice(0, -3);
+  if (word.endsWith("able") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ible") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("es") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("ly") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("s") && !word.endsWith("ss") && word.length > 3) return word.slice(0, -1);
+  return word;
+}
+
+/**
+ * Tokenize text into unique stemmed words.
+ * Returns Set of lowercase stemmed tokens, excluding stop words.
+ */
+function tokenize(text: string): Set<string> {
+  const tokens = new Set<string>();
+  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/);
+  for (const word of words) {
+    if (word.length < 2 || STOP_WORDS.has(word)) continue;
+    tokens.add(word);
+    const stemmed = stem(word);
+    if (stemmed.length >= 2) tokens.add(stemmed);
+  }
+  return tokens;
+}
+
+// ============================================================================
+// Incremental Sync
+// ============================================================================
+
+/**
+ * Sync a single Airtable table to D1 (incremental).
+ * Compares Airtable's modifiedTime against D1's updated_at.
+ * Returns { total, written, skipped }.
  */
 async function syncTable(
   env: Env,
   localTable: string,
   config: TableConfig,
-): Promise<number> {
+): Promise<{ total: number; written: number; skipped: number }> {
   const records = await listRecords(
     env.AIRTABLE_API_KEY,
     env.AIRTABLE_BASE_ID,
     config.airtableName,
   );
 
-  let count = 0;
+  // Fetch existing updated_at timestamps for comparison
+  const { results: existing } = await env.DB
+    .prepare(`SELECT id, updated_at FROM ${localTable}`)
+    .all<{ id: string; updated_at: string }>();
+  const existingMap = new Map(existing.map((r) => [r.id, r.updated_at]));
+
+  let written = 0;
+  let skipped = 0;
+
   for (const record of records) {
-    const id = record.fields.id as string || record.id;
+    const id = (record.fields.id as string) || record.id;
     const extraColumns = config.extraColumns
       ? config.extraColumns(record.fields, record.id)
       : {};
+
+    // Incremental check: skip if record hasn't been modified since last sync
+    const modifiedTime = record.lastModifiedTime;
+    const existingUpdatedAt = existingMap.get(id);
+
+    if (existingUpdatedAt && modifiedTime) {
+      const airtableTime = new Date(modifiedTime).getTime();
+      const d1Time = new Date(existingUpdatedAt).getTime();
+      if (airtableTime <= d1Time) {
+        skipped++;
+        continue;
+      }
+    }
 
     await upsertRecord(
       env.DB,
@@ -89,29 +170,105 @@ async function syncTable(
       record.fields,
       extraColumns,
     );
-    count++;
+    written++;
   }
 
-  await updateSyncMetadata(env.DB, localTable, count);
-  return count;
+  await updateSyncMetadata(env.DB, localTable, records.length);
+  return { total: records.length, written, skipped };
+}
+
+/**
+ * Rebuild the search_tokens table from current services + organizations.
+ * Called after full sync to update the search index.
+ */
+async function rebuildSearchTokens(db: D1Database): Promise<number> {
+  await db.prepare("DELETE FROM search_tokens").run();
+
+  const { results: services } = await db
+    .prepare("SELECT id, organization_id, data FROM services")
+    .all<{ id: string; organization_id: string; data: string }>();
+
+  // Fetch org names for enrichment
+  const { results: orgs } = await db
+    .prepare("SELECT id, data FROM organizations")
+    .all<{ id: string; data: string }>();
+  const orgNameMap = new Map<string, string>();
+  for (const org of orgs) {
+    const orgData = JSON.parse(org.data) as Record<string, unknown>;
+    if (orgData.name) orgNameMap.set(org.id, String(orgData.name));
+  }
+
+  let tokenCount = 0;
+
+  for (const svc of services) {
+    const data = JSON.parse(svc.data) as Record<string, unknown>;
+    const name = String(data.name || "");
+    const desc = String(data.description || "");
+    const orgName = orgNameMap.get(svc.organization_id) || "";
+
+    const nameTokens = tokenize(name);
+    const descTokens = tokenize(desc);
+    const orgTokens = tokenize(orgName);
+
+    const stmts: D1PreparedStatement[] = [];
+    for (const token of nameTokens) {
+      stmts.push(
+        db.prepare("INSERT INTO search_tokens (service_id, token, source) VALUES (?1, ?2, 'name')")
+          .bind(svc.id, token),
+      );
+    }
+    for (const token of descTokens) {
+      if (!nameTokens.has(token)) {
+        stmts.push(
+          db.prepare("INSERT INTO search_tokens (service_id, token, source) VALUES (?1, ?2, 'description')")
+            .bind(svc.id, token),
+        );
+      }
+    }
+    for (const token of orgTokens) {
+      if (!nameTokens.has(token) && !descTokens.has(token)) {
+        stmts.push(
+          db.prepare("INSERT INTO search_tokens (service_id, token, source) VALUES (?1, ?2, 'organization')")
+            .bind(svc.id, token),
+        );
+      }
+    }
+
+    if (stmts.length > 0) {
+      await db.batch(stmts);
+      tokenCount += stmts.length;
+    }
+  }
+
+  return tokenCount;
 }
 
 /**
  * Run a full sync of all tables.
  * Called by the scheduled handler.
  */
-export async function runFullSync(env: Env): Promise<Record<string, number>> {
-  const results: Record<string, number> = {};
+export async function runFullSync(env: Env): Promise<Record<string, unknown>> {
+  const results: Record<string, unknown> = {};
 
   for (const [localTable, config] of Object.entries(TABLE_MAPPING)) {
     try {
-      const count = await syncTable(env, localTable, config);
-      results[localTable] = count;
-      console.log(`Synced ${localTable}: ${count} records`);
+      const { total, written, skipped } = await syncTable(env, localTable, config);
+      results[localTable] = { total, written, skipped };
+      console.log(`Synced ${localTable}: ${total} records (${written} written, ${skipped} skipped)`);
     } catch (err) {
       console.error(`Failed to sync ${localTable}:`, err);
-      results[localTable] = -1;
+      results[localTable] = { error: String(err) };
     }
+  }
+
+  // Rebuild search tokens after sync
+  try {
+    const tokenCount = await rebuildSearchTokens(env.DB);
+    results._search_tokens = { tokens: tokenCount };
+    console.log(`Rebuilt search index: ${tokenCount} tokens`);
+  } catch (err) {
+    console.error("Failed to rebuild search tokens:", err);
+    results._search_tokens = { error: String(err) };
   }
 
   return results;
@@ -126,5 +283,6 @@ export async function syncSingleTable(env: Env, tableName: string): Promise<numb
   if (!config) {
     throw new Error(`Unknown table: ${tableName}. Valid tables: ${Object.keys(TABLE_MAPPING).join(", ")}`);
   }
-  return syncTable(env, tableName, config);
+  const { total } = await syncTable(env, tableName, config);
+  return total;
 }

@@ -162,10 +162,123 @@ export async function getRecords(
 }
 
 /**
- * Search services using LIKE on name and description.
- * Replaces FTS5 which is not available in D1.
+ * Basic English stemmer — matches the one in sync.ts.
+ * Strips common suffixes for query-time stemming.
+ */
+function stem(word: string): string {
+  if (word.length <= 3) return word;
+  if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";
+  if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);
+  if (word.endsWith("tion") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ment") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ness") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ous") && word.length > 4) return word.slice(0, -3);
+  if (word.endsWith("ful") && word.length > 4) return word.slice(0, -3);
+  if (word.endsWith("able") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ible") && word.length > 5) return word.slice(0, -4);
+  if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("es") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("ly") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("s") && !word.endsWith("ss") && word.length > 3) return word.slice(0, -1);
+  return word;
+}
+
+/**
+ * Search services using the search_tokens index.
+ * Stems query terms and matches against indexed tokens for fast, fuzzy search.
+ * Results ranked by relevance: name matches (3x) > description (2x) > org (1x).
+ * Falls back to LIKE search if search_tokens table is empty.
  */
 export async function searchServices(
+  db: D1Database,
+  query: string,
+  options: { page?: number; perPage?: number; statusFilter?: string } = {},
+): Promise<[Record<string, unknown>[], number]> {
+  const { page = 1, perPage = 20, statusFilter } = options;
+
+  // Tokenize and stem the query
+  const queryWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length >= 2);
+  const queryTokens: string[] = [];
+  for (const word of queryWords) {
+    queryTokens.push(word);
+    const stemmed = stem(word);
+    if (stemmed !== word && stemmed.length >= 2) queryTokens.push(stemmed);
+  }
+
+  // Check if search_tokens table has data
+  const tokenCheck = await db.prepare("SELECT COUNT(*) as cnt FROM search_tokens").first<{ cnt: number }>();
+  const hasTokenIndex = (tokenCheck?.cnt ?? 0) > 0;
+
+  if (!hasTokenIndex || queryTokens.length === 0) {
+    // Fallback to LIKE search
+    return searchServicesLike(db, query, options);
+  }
+
+  // Build token match query with relevance scoring + status filter + pagination
+  // Join directly with services table to avoid IN clause parameter limits
+  const tokenLikeClauses = queryTokens.map((_, i) => `st.token LIKE ?${i + 1}`).join(" OR ");
+  const tokenParams = queryTokens.map((t) => t + "%");
+  let paramIdx = queryTokens.length + 1;
+
+  let statusClause = "";
+  if (statusFilter) {
+    statusClause = `AND json_extract(s.data, '$.status') = ?${paramIdx}`;
+    tokenParams.push(statusFilter);
+    paramIdx++;
+  }
+
+  // Count total matches
+  const countQuery = `
+    SELECT COUNT(DISTINCT st.service_id) as cnt
+    FROM search_tokens st
+    JOIN services s ON s.id = st.service_id
+    WHERE (${tokenLikeClauses}) ${statusClause}
+  `;
+  const countResult = await db.prepare(countQuery).bind(...tokenParams).first<{ cnt: number }>();
+  const total = countResult?.cnt ?? 0;
+
+  if (total === 0) {
+    return searchServicesLike(db, query, options);
+  }
+
+  // Fetch ranked page of results
+  const offset = (page - 1) * perPage;
+  const dataQuery = `
+    SELECT s.id, s.airtable_id, s.organization_id, s.data,
+           SUM(CASE st.source WHEN 'name' THEN 3 WHEN 'description' THEN 2 ELSE 1 END) as score,
+           COUNT(DISTINCT st.token) as matched_tokens
+    FROM search_tokens st
+    JOIN services s ON s.id = st.service_id
+    WHERE (${tokenLikeClauses}) ${statusClause}
+    GROUP BY s.id
+    ORDER BY matched_tokens DESC, score DESC
+    LIMIT ?${paramIdx} OFFSET ?${paramIdx + 1}
+  `;
+  tokenParams.push(String(perPage), String(offset));
+
+  const { results: rows } = await db.prepare(dataQuery).bind(...tokenParams).all<{
+    id: string;
+    airtable_id: string;
+    organization_id: string;
+    data: string;
+    score: number;
+    matched_tokens: number;
+  }>();
+
+  const records = rows.map((r) => ({
+    ...JSON.parse(r.data),
+    _id: r.id,
+    _airtable_id: r.airtable_id,
+    _organization_id: r.organization_id,
+  }));
+
+  return [records, total];
+}
+
+/**
+ * Fallback LIKE-based search (used when token index is empty).
+ */
+async function searchServicesLike(
   db: D1Database,
   query: string,
   options: { page?: number; perPage?: number; statusFilter?: string } = {},
@@ -176,7 +289,6 @@ export async function searchServices(
   const params: unknown[] = [];
   let paramIndex = 1;
 
-  // Search on name and description
   whereClauses.push(
     `(json_extract(data, '$.name') LIKE ?${paramIndex} OR json_extract(data, '$.description') LIKE ?${paramIndex + 1})`,
   );

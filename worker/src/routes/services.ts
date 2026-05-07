@@ -6,6 +6,7 @@
  */
 import { Hono } from "hono";
 import type { Env } from "../env";
+import { searchServices } from "../db/queries";
 import {
   mapServiceSummary, mapService, mapOrganizationSummary, mapOrganization,
   mapLocation, mapAddress, mapPhone, mapContact, mapLanguage,
@@ -46,7 +47,35 @@ services.get("/", async (c) => {
     paramIndex++;
   }
 
-  // Text search on name and description
+  // Text search — delegate to token-based searchServices if search param provided
+  if (search && !organizationId) {
+    // Use the optimized token search (handles stemming, ranking)
+    const [searchResults, searchTotal] = await searchServices(db, search, {
+      page,
+      perPage,
+      statusFilter: publishedStatus,
+    });
+
+    const items = [];
+    for (const data of searchResults) {
+      const orgId = (data as Record<string, unknown>)._organization_id as string || "unknown";
+      if (minimal) {
+        items.push({ id: (data as Record<string, unknown>)._id, last_modified: (data as Record<string, unknown>).lastUpdated });
+      } else if (full) {
+        const service = await buildFullService(db, (data as Record<string, unknown>)._id as string, data as Record<string, unknown>, orgId);
+        items.push(service);
+      } else {
+        let orgSummary;
+        if (orgId !== "unknown") {
+          orgSummary = await lookupOrgSummary(db, orgId);
+        }
+        items.push(mapServiceSummary(data as Record<string, unknown>, orgId, orgSummary));
+      }
+    }
+    return c.json(paginate(items, searchTotal, page, perPage));
+  }
+
+  // Fallback LIKE search when combined with org filter
   if (search) {
     whereClauses.push(
       `(json_extract(data, '$.name') LIKE ?${paramIndex} OR json_extract(data, '$.description') LIKE ?${paramIndex + 1})`,

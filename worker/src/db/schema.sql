@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS sync_metadata (
     record_count INTEGER
 );
 
--- Geocache: pre-computed coordinates from Nominatim (supplements location records)
+-- Geocache: pre-computed coordinates from Google Geocoding API
 CREATE TABLE IF NOT EXISTS geocache (
     address_id TEXT PRIMARY KEY,
     latitude REAL NOT NULL,
@@ -143,8 +143,18 @@ CREATE TABLE IF NOT EXISTS geocache (
     geocoded_at TEXT
 );
 
+-- Search tokens: normalized words from service name/description for fast prefix search.
+-- Replaces LIKE '%term%' with indexed token matching + basic stemming.
+CREATE TABLE IF NOT EXISTS search_tokens (
+    service_id TEXT NOT NULL,
+    token TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'name'
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_services_org ON services(organization_id);
 CREATE INDEX IF NOT EXISTS idx_sal_service ON service_at_locations(service_id);
 CREATE INDEX IF NOT EXISTS idx_sal_location ON service_at_locations(location_id);
 CREATE INDEX IF NOT EXISTS idx_terms_taxonomy ON taxonomy_terms(taxonomy_id);
+CREATE INDEX IF NOT EXISTS idx_search_token ON search_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_search_service ON search_tokens(service_id);

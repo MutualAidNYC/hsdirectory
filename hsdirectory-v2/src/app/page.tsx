@@ -163,16 +163,7 @@ export default async function Home() {
                     className={`group flex items-center gap-3 p-5 rounded-2xl ${color.bg} border border-[var(--card-border)] hover:shadow-md transition-all`}
                   >
                     <span className="text-2xl flex-shrink-0 flex items-center justify-center w-8 h-8">
-                      {category.icon ? (
-                        <img 
-                          src={category.icon} 
-                          alt={category.name} 
-                          className="w-full h-full object-contain"
-                          loading="lazy" 
-                        />
-                      ) : (
-                        CATEGORY_ICONS[category.name] || "📋"
-                      )}
+                      {CATEGORY_ICONS[category.name] || "📋"}
                     </span>
                     <span className={`text-sm font-semibold ${color.text}`}>
                       {category.name}

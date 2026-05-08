@@ -52,6 +52,40 @@ app.route("/map", map);
 app.route("/api/chat", chat);
 
 // ============================================================================
+// Icon endpoint — serves cached category icons from D1
+// ============================================================================
+
+/**
+ * Serve cached category icons. Returns the actual image data stored during sync,
+ * avoiding Airtable's expiring signed URLs.
+ */
+app.get("/icons/:name", async (c) => {
+  const name = decodeURIComponent(c.req.param("name"));
+  const row = await c.env.DB
+    .prepare("SELECT content_type, image_data FROM icon_cache WHERE category_name = ?1")
+    .bind(name)
+    .first<{ content_type: string; image_data: string }>();
+
+  if (!row) {
+    return c.json({ error: "Icon not found" }, 404);
+  }
+
+  const binaryStr = atob(row.image_data);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+
+  return new Response(bytes, {
+    headers: {
+      "Content-Type": row.content_type,
+      "Cache-Control": "public, max-age=86400", // 24 hours
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+});
+
+// ============================================================================
 // MCP endpoint — Streamable HTTP at /mcp
 // ============================================================================
 
@@ -125,6 +159,84 @@ app.post("/sync/table/:table", async (c) => {
   } catch (err) {
     return c.json({ status: "error", table: tableName, error: String(err) }, 500);
   }
+});
+
+/**
+ * Manual icon cache endpoint.
+ * Downloads category icons from Airtable and stores as base64 in D1.
+ * Processes in batches of 5 to stay within subrequest limits.
+ */
+app.post("/sync/icons", async (c) => {
+  const denied = requireSyncAuth(c);
+  if (denied) return denied;
+
+  const db = c.env.DB;
+  const BATCH_SIZE = 5;
+
+  // Get all taxonomy terms with icon URLs
+  const { results: terms } = await db
+    .prepare("SELECT id, data FROM taxonomy_terms")
+    .all<{ id: string; data: string }>();
+
+  const toCache: Array<{ name: string; url: string }> = [];
+  for (const term of terms) {
+    const d = JSON.parse(term.data) as Record<string, unknown>;
+    const name = d.name as string;
+    const iconDark = d["x-icon_dark"] as Array<{ url?: string }> | undefined;
+
+    if (!name || !iconDark || !Array.isArray(iconDark) || iconDark.length === 0 || !iconDark[0].url) {
+      continue;
+    }
+
+    // Skip if already cached within 24h
+    const existing = await db
+      .prepare("SELECT cached_at FROM icon_cache WHERE category_name = ?1")
+      .bind(name)
+      .first<{ cached_at: string }>();
+
+    if (existing) {
+      const cacheAge = Date.now() - new Date(existing.cached_at).getTime();
+      if (cacheAge < 24 * 60 * 60 * 1000) continue;
+    }
+
+    toCache.push({ name, url: iconDark[0].url });
+  }
+
+  // Process batch
+  const batch = toCache.slice(0, BATCH_SIZE);
+  let cached = 0;
+  const errors: string[] = [];
+
+  for (const { name, url } of batch) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        errors.push(`${name}: HTTP ${resp.status}`);
+        continue;
+      }
+
+      const buffer = await resp.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const contentType = resp.headers.get("content-type") || "image/png";
+
+      await db
+        .prepare(
+          "INSERT OR REPLACE INTO icon_cache (category_name, content_type, image_data, cached_at) VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(name, contentType, base64, new Date().toISOString())
+        .run();
+      cached++;
+    } catch (err) {
+      errors.push(`${name}: ${String(err)}`);
+    }
+  }
+
+  return c.json({
+    status: "completed",
+    cached,
+    remaining: toCache.length - batch.length,
+    errors: errors.length > 0 ? errors : undefined,
+  });
 });
 
 // Manual seed geocache from JSON body (fallback/import)

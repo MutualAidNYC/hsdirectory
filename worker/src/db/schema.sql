@@ -151,6 +151,15 @@ CREATE TABLE IF NOT EXISTS search_tokens (
     source TEXT NOT NULL DEFAULT 'name'
 );
 
+-- Icon cache: downloaded Airtable category icons stored as base64.
+-- Prevents broken images from expiring Airtable signed URLs.
+CREATE TABLE IF NOT EXISTS icon_cache (
+    category_name TEXT PRIMARY KEY,
+    content_type TEXT NOT NULL,
+    image_data TEXT NOT NULL,
+    cached_at TEXT NOT NULL
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_services_org ON services(organization_id);
 CREATE INDEX IF NOT EXISTS idx_sal_service ON service_at_locations(service_id);

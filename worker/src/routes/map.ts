@@ -43,12 +43,13 @@ map.get("/services", async (c) => {
   }
 
   const iconLookup = new Map<string, string>();
+  const apiOrigin = new URL(c.req.url).origin;
   for (const row of taxTermResult.results) {
     const d = JSON.parse(row.data) as Record<string, unknown>;
     const name = d.name as string;
-    const iconDark = d["x-icon_dark"] as Array<{ url?: string }> | undefined;
-    if (name && iconDark && Array.isArray(iconDark) && iconDark.length > 0 && iconDark[0].url) {
-      iconLookup.set(name, iconDark[0].url);
+    if (name) {
+      // Use Worker-served cached icon URL (never expires)
+      iconLookup.set(name, `${apiOrigin}/icons/${encodeURIComponent(name)}`);
     }
   }
 

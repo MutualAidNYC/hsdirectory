@@ -244,6 +244,66 @@ async function rebuildSearchTokens(db: D1Database): Promise<number> {
 }
 
 /**
+ * Download and cache category icons from Airtable attachment URLs.
+ * Airtable signed URLs expire after a few hours — this stores the actual
+ * image data in D1 so the Worker can serve them indefinitely.
+ */
+async function cacheIcons(db: D1Database): Promise<number> {
+  const { results: terms } = await db
+    .prepare("SELECT id, data FROM taxonomy_terms")
+    .all<{ id: string; data: string }>();
+
+  let cached = 0;
+  for (const term of terms) {
+    const d = JSON.parse(term.data) as Record<string, unknown>;
+    const name = d.name as string;
+    const iconDark = d["x-icon_dark"] as Array<{ url?: string; type?: string }> | undefined;
+
+    if (!name || !iconDark || !Array.isArray(iconDark) || iconDark.length === 0 || !iconDark[0].url) {
+      continue;
+    }
+
+    // Check if we already have this icon cached
+    const existing = await db
+      .prepare("SELECT cached_at FROM icon_cache WHERE category_name = ?1")
+      .bind(name)
+      .first<{ cached_at: string }>();
+
+    // Re-cache every 24 hours (Airtable URLs typically expire in 2-4 hours)
+    if (existing) {
+      const cacheAge = Date.now() - new Date(existing.cached_at).getTime();
+      if (cacheAge < 24 * 60 * 60 * 1000) {
+        continue; // Still fresh
+      }
+    }
+
+    try {
+      const resp = await fetch(iconDark[0].url);
+      if (!resp.ok) {
+        console.log(`Icon fetch failed for ${name}: ${resp.status}`);
+        continue;
+      }
+
+      const buffer = await resp.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const contentType = resp.headers.get("content-type") || "image/png";
+
+      await db
+        .prepare(
+          "INSERT OR REPLACE INTO icon_cache (category_name, content_type, image_data, cached_at) VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(name, contentType, base64, new Date().toISOString())
+        .run();
+      cached++;
+    } catch (err) {
+      console.error(`Icon cache error for ${name}:`, err);
+    }
+  }
+
+  return cached;
+}
+
+/**
  * Run a full sync of all tables.
  * Called by the scheduled handler.
  */
@@ -271,6 +331,16 @@ export async function runFullSync(env: Env): Promise<Record<string, unknown>> {
     results._search_tokens = { error: String(err) };
   }
 
+  // Cache category icons (download from Airtable → base64 in D1)
+  try {
+    const iconCount = await cacheIcons(env.DB);
+    results._icons = { cached: iconCount };
+    if (iconCount > 0) console.log(`Cached ${iconCount} category icons`);
+  } catch (err) {
+    console.error("Failed to cache icons:", err);
+    results._icons = { error: String(err) };
+  }
+
   return results;
 }
 
@@ -286,3 +356,4 @@ export async function syncSingleTable(env: Env, tableName: string): Promise<numb
   const { total } = await syncTable(env, tableName, config);
   return total;
 }
+

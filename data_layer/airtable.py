@@ -1,5 +1,6 @@
+import builtins
 from time import sleep
-from typing import Any
+from typing import Any, TypeVar, Type
 
 import httpx
 
@@ -31,16 +32,22 @@ TABLE_IDS = {
     "organization_identifier": "tblQRetpihQaV76Af",
 }
 
+T = TypeVar('T')
 
 class AirtableData[T](DataEntity[T]):
-    def __init__(self, model_class: type[T], table: Table, id_columns: list[TableColumn]):
+    def __init__(
+        self,
+        model_class: Type[T],
+        table: Table,
+        id_columns: list[TableColumn] | None = None,
+    ):
+        self.model_class = model_class
         settings = get_settings()
         self.base_id = settings.airtable_base_id
         self.api_key = settings.airtable_api_key
         self._rate_limit_delay = BASE_RATE_LIMIT_DELAY
         self.table = table
-        self.id_columns = id_columns or ['RECORD_ID()']
-        super.__init__(model_class)
+        self.id_columns = id_columns or ['id']
 
     def _make_request(
         self,
@@ -90,7 +97,7 @@ class AirtableData[T](DataEntity[T]):
         if filters:
             conditionals = ",".join(
                 [
-                    f"{f.key} = {f.value}" for f in filters
+                    f"{f.key} = '{f.value}'" for f in filters
                 ]
             )
             params['filterByFormula'] = f"OR({conditionals})"
@@ -101,7 +108,7 @@ class AirtableData[T](DataEntity[T]):
             limit=limit,
         )
         return [
-            T(**record.get('fields', {})) for record in raw_records
+            self.model_class(**record.get('fields', {})) for record in raw_records
         ]
 
     def get(
@@ -109,13 +116,13 @@ class AirtableData[T](DataEntity[T]):
         id: int,
     ) -> T | None:
         return self.list(
-            filters=[Filter(key=col, value=id) for col in self.id_columns]
+            filters=[Filter(key=col, value=id) for col in self.id_columns],
         )[0]
     
     def get_bulk(
         self,
-        ids: list[int],
-    ) -> list[T]:
+        ids: builtins.list[int],
+    ) -> builtins.list[T]:
         return [
             self.get(id=id) for id in ids
         ]

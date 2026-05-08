@@ -133,6 +133,7 @@ async def get_service_at_location_updated(sal_id: str):
     phones_table = dependency.get_phones_table()
     schedule_table = dependency.get_schedule_table()
     locations_table = dependency.get_locations_table()
+    accessibility_table = dependency.get_accessibility_table()
 
     return application_layer.get_service_at_locations(
         sal_id=sal_id,
@@ -142,6 +143,7 @@ async def get_service_at_location_updated(sal_id: str):
         phones_table=phones_table,
         schedule_table=schedule_table,
         locations_table=locations_table,
+        accessibilities_table=accessibility_table,
     )
 
 

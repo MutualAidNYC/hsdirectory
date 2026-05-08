@@ -1,3 +1,4 @@
+import builtins
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ class Filter(BaseModel):
 class DataEntity[T: BaseModel](ABC):
     def __init__(self, model_class: type[T]):
         self.model_class = model_class
+        super().__init__()
 
     @abstractmethod
     def list(
@@ -35,8 +37,8 @@ class DataEntity[T: BaseModel](ABC):
     @abstractmethod
     def get_bulk(
         self,
-        ids: list[int],
-    ) -> list[T]:
+        ids: builtins.list[int],
+    ) -> builtins.list[T]:
         ...
 
 class TestData[T](DataEntity[T]):
@@ -49,7 +51,14 @@ class TestData[T](DataEntity[T]):
         filters: list[Filter] | None = None,
         max: int | None = None,
     ) -> list[T]:
-        return list(self.data.values())
+        return [
+            self.data[index]
+            for index in self.data
+            if not filters or any(
+                getattr(self.data[index], filter.key) == filter.value
+                for filter in filters
+            )
+        ]
 
     def get(
         self,
@@ -59,6 +68,6 @@ class TestData[T](DataEntity[T]):
 
     def get_bulk(
         self,
-        ids: list[int],
-    ) -> list[T]:
+        ids: builtins.list[int],
+    ) -> builtins.list[T]:
         return [self.data[id] for id in ids if id in self.data]

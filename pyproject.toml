@@ -1,9 +1,11 @@
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+pythonpath = ["."]
+
 [tool.ruff]
 # Target the Python version you are using
 target-version = "py312"
-line-length = 88
-
-
+line-length = 100
 
 include = [
     "models/airtable.py",
@@ -14,8 +16,10 @@ include = [
 
 [tool.ruff.lint]
 # E: pycodestyle errors, F: Pyflakes, I: isort, B: bugbear, UP: pyupgrade
-select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501"] # Ignore line length errors (let the formatter handle it)
+select = ["E", "F", "I", "B", "UP", "ANN"]
+ignore = [
+    "ANN204", # Ignore __init__ method missing type annotations
+] 
 
 [tool.ruff.lint.isort]
 # Groups imports so your standard libs stay separate from third-party ones
@@ -32,3 +36,6 @@ skip-magic-trailing-comma = false
 [tool.ruff.lint.flake8-type-checking]
 # Fixes Pydantic errors where types are accidentally hidden from runtime
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN201"]

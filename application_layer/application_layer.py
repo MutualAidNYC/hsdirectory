@@ -1,7 +1,9 @@
 
+
 from config import Settings
 from data_layer.data import DataEntity, Filter
 from models.airtable import (
+    AccessibilityResponse,
     AddressResponse,
     ContactResponse,
     LocationResponse,
@@ -10,7 +12,15 @@ from models.airtable import (
     ServiceAtLocationResponse,
     ServiceResponse,
 )
-from models.hsds import Location, ServiceAtLocation
+from models.hsds import (
+    Accessibility,
+    Address,
+    Contact,
+    Location,
+    Phone,
+    Schedule,
+    ServiceAtLocation,
+)
 
 
 def list_service_at_locations(
@@ -21,6 +31,7 @@ def list_service_at_locations(
     contacts_table: DataEntity[ContactResponse],
     phones_table: DataEntity[PhoneResponse],
     schedule_table: DataEntity[ScheduleResponse],
+    accessibilities_table: DataEntity[AccessibilityResponse],
     settings: Settings,
     page: int = 1,
     per_page: int = 20,
@@ -28,7 +39,7 @@ def list_service_at_locations(
 ) -> list[ServiceAtLocation]:
     services_at_locations = service_at_locations_table.list()
     services = services_table.list(
-        filter=[
+        filters=[
             Filter(
                 key="status",
                 value=settings.published_status_value,
@@ -39,8 +50,8 @@ def list_service_at_locations(
 
     results = []
     for sal in services_at_locations:
-        if all(sid not in published_service_ids for sid in sal.service_id):
-            continue  # Skip if service is not published
+        if sal.service_id not in published_service_ids:
+            continue
 
         res = _create_service_at_location_result(
             service_at_location_response=sal,
@@ -49,6 +60,7 @@ def list_service_at_locations(
             contacts_table=contacts_table,
             phones_table=phones_table,
             schedule_table=schedule_table,
+            accessibilities_table=accessibilities_table,
         )
         results.append(res)
 
@@ -63,18 +75,20 @@ def get_service_at_locations(
     contacts_table: DataEntity[ContactResponse],
     phones_table: DataEntity[PhoneResponse],
     schedule_table: DataEntity[ScheduleResponse],
+    accessibilities_table: DataEntity[AccessibilityResponse],
 ) -> ServiceAtLocation | None:
     service_at_locations = service_at_locations_table.get(id=sal_id)
     if not service_at_locations:
         return None
     
     return _create_service_at_location_result(
-        service_at_location_response=service_at_locations[0],
+        service_at_location_response=service_at_locations,
         locations_table=locations_table,
         addresses_table=addresses_table,
         contacts_table=contacts_table,
         phones_table=phones_table,
         schedule_table=schedule_table,
+        accessibilities_table=accessibilities_table,
     )
 
 def _create_service_at_location_result(
@@ -84,11 +98,28 @@ def _create_service_at_location_result(
     contacts_table: DataEntity[ContactResponse],
     phones_table: DataEntity[PhoneResponse],
     schedule_table: DataEntity[ScheduleResponse],
+    accessibilities_table: DataEntity[AccessibilityResponse],
 ) -> ServiceAtLocation:
-    contacts = contacts_table.get_bulk(ids=service_at_location_response.contacts) if service_at_location_response.contacts else None
-    phones = phones_table.get_bulk(ids=service_at_location_response.phones) if service_at_location_response.phones else None
-    schedules = schedule_table.get_bulk(ids=service_at_location_response.schedules) if service_at_location_response.schedules else None
+    contact_responses = contacts_table.get_bulk(ids=service_at_location_response.contacts) \
+        if service_at_location_response.contacts else None
+    phone_responses = phones_table.get_bulk(ids=service_at_location_response.phones) \
+        if service_at_location_response.phones else None
+    schedule_responses = schedule_table.get_bulk(ids=service_at_location_response.schedules) \
+        if service_at_location_response.schedules else None
     
+    contacts = [
+        Contact(**contact_response.model_dump())
+        for contact_response in contact_responses
+    ]
+    phones = [
+        Phone(**phone_response.model_dump())
+        for phone_response in phone_responses
+    ]
+    schedules = [
+        Schedule(**schedule_response.model_dump())
+        for schedule_response in schedule_responses
+    ]
+
     if not service_at_location_response.locations:
         return ServiceAtLocation(
             id=service_at_location_response.id,
@@ -99,7 +130,8 @@ def _create_service_at_location_result(
             schedules=schedules,
         )
 
-    location = locations_table.get(id=service_at_location_response.locations[0]) if service_at_location_response and service_at_location_response.locations else None
+    location = locations_table.get(id=service_at_location_response.locations[0]) \
+        if service_at_location_response and service_at_location_response.locations else None
 
     if not location:
         return ServiceAtLocation(
@@ -111,8 +143,21 @@ def _create_service_at_location_result(
             schedules=schedules,
         )
 
-    addresses = addresses_table.get_bulk(ids=location.addresses) if location.addresses else None
-    accessibilities = location.accessibility if location.accessibility else None
+    address_responses = addresses_table.get_bulk(ids=location.addresses) \
+        if location.addresses else None
+    accessibily_responses = accessibilities_table.get_bulk(ids=location.accessibility) \
+        if location.accessibility else None
+
+    addresses = [
+        Address(**address_response.model_dump())
+        for address_response in address_responses
+    ] if address_responses else None
+
+    accessibilities = [
+        Accessibility(**accessibility_response.model_dump())
+        for accessibility_response in accessibily_responses
+    ] if accessibily_responses else None
+
     location_response = Location(
         id=location.id,
         location_type=location.location_type,

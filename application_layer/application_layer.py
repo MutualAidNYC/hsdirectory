@@ -1,5 +1,3 @@
-
-
 from config import Settings
 from data_layer.data import DataEntity, Filter
 from models.airtable import (

@@ -110,15 +110,15 @@ def _create_service_at_location_result(
     contacts = [
         Contact(**contact_response.model_dump())
         for contact_response in contact_responses
-    ]
+    ] if contact_responses else None
     phones = [
         Phone(**phone_response.model_dump())
         for phone_response in phone_responses
-    ]
+    ] if phone_responses else None
     schedules = [
         Schedule(**schedule_response.model_dump())
         for schedule_response in schedule_responses
-    ]
+    ] if schedule_responses else None
 
     if not service_at_location_response.locations:
         return ServiceAtLocation(

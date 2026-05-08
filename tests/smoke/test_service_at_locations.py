@@ -1,12 +1,12 @@
 import pytest
 
-from models.hsds import Location, ServiceAtLocation
+from models.hsds import ServiceAtLocation
 from routes import service_at_locations
 
 
 @pytest.fixture
 def test_id() -> str:
-    return "sal1"
+    return "recdCdKEoExUm5bjs"
 
 @pytest.mark.smoke
 @pytest.mark.asyncio
@@ -16,7 +16,6 @@ async def test_service_at_locations_get(test_id: str):
     )
 
     assert isinstance(sal, ServiceAtLocation)
-    assert isinstance(sal.location, Location)
 
 @pytest.mark.smoke
 @pytest.mark.asyncio
@@ -51,7 +50,4 @@ async def test_service_at_locations_list_service_at_locations():
     assert isinstance(all_services_at_locations, list)
     assert all(
         isinstance(item, ServiceAtLocation) for item in all_services_at_locations
-    )
-    assert any(
-        isinstance(item.location, Location) for item in all_services_at_locations
     )

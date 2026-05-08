@@ -26,8 +26,8 @@ class OrganizationResponse(BaseModel):
 class ServiceResponse(BaseModel):
     """Full service details - ORUK compliant with required fields."""
     id: str
-    organization_id: str  # Required by ORUK
     name: str
+    organizations: list[str] | None = None
     status: str = "active"  # Required by ORUK
     alternate_name: str | None = None
     description: str | None = None

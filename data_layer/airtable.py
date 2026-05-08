@@ -1,6 +1,6 @@
 import builtins
 from time import sleep
-from typing import Any, TypeVar, Type
+from typing import Any, TypeVar
 
 import httpx
 
@@ -37,7 +37,7 @@ T = TypeVar('T')
 class AirtableData[T](DataEntity[T]):
     def __init__(
         self,
-        model_class: Type[T],
+        model_class: type[T],
         table: Table,
         id_columns: list[TableColumn] | None = None,
     ):
@@ -115,9 +115,10 @@ class AirtableData[T](DataEntity[T]):
         self,
         id: int,
     ) -> T | None:
-        return self.list(
+        results = self.list(
             filters=[Filter(key=col, value=id) for col in self.id_columns],
-        )[0]
+        )
+        return results[0] if results else None
     
     def get_bulk(
         self,

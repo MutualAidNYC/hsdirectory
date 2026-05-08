@@ -87,13 +87,15 @@ async def list_service_at_locations_updated(
     contacts_table = dependency.get_contacts_table()
     phones_table = dependency.get_phones_table()
     schedule_table = dependency.get_schedule_table()
+    accessibilities_table = dependency.get_accessibility_table()
     settings = get_settings()
 
-    application_layer.list_service_at_locations(
+    return application_layer.list_service_at_locations(
         service_at_locations_table=service_at_locations_table,
         services_table=services_table,
         locations_table=location_table,
         addresses_table=addresses_table,
+        accessibilities_table=accessibilities_table,
         contacts_table=contacts_table,
         phones_table=phones_table,
         schedule_table=schedule_table,

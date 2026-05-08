@@ -16,7 +16,7 @@ include = [
 
 [tool.ruff.lint]
 # E: pycodestyle errors, F: Pyflakes, I: isort, B: bugbear, UP: pyupgrade
-select = ["E", "F", "I", "B", "UP", "ANN"]
+select = ["E", "F", "I", "B", "UP", "ANN", "W"]
 ignore = [
     "ANN204", # Ignore __init__ method missing type annotations
 ] 

@@ -44,7 +44,7 @@ class ServiceResponse(BaseModel):
     assurer_email: str | None = None
     alert: str | None = None
     last_modified: str | None = None
-    
+
     # Related objects
     organization: str | None = None
     phones: list[str] | None = None
@@ -56,7 +56,7 @@ class ServiceResponse(BaseModel):
     funding: list[str] | None = None
     cost_options: list[str] | None = None
     required_documents: list[str] | None = None
-    
+
     # Custom extension fields (non-HSDS standard)
     group_name: str | None = None  # Organization/group name from Airtable
     need_focus: list[str] | None = None  # Need categories

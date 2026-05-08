@@ -65,7 +65,7 @@ def list_service_at_locations(
         results.append(res)
 
     return results
-        
+
 
 def get_service_at_locations(
     sal_id: int,
@@ -80,7 +80,7 @@ def get_service_at_locations(
     service_at_locations = service_at_locations_table.get(id=sal_id)
     if not service_at_locations:
         return None
-    
+
     return _create_service_at_location_result(
         service_at_location_response=service_at_locations,
         locations_table=locations_table,
@@ -106,7 +106,7 @@ def _create_service_at_location_result(
         if service_at_location_response.phones else None
     schedule_responses = schedule_table.get_bulk(ids=service_at_location_response.schedules) \
         if service_at_location_response.schedules else None
-    
+
     contacts = [
         Contact(**contact_response.model_dump())
         for contact_response in contact_responses

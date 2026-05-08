@@ -41,7 +41,7 @@ def test_airtable_bulk_get(airtable_client: AirtableData[ServiceAtLocationRespon
     assert records is not None
     assert isinstance(records, list)
     assert len(records) == len(ids)
-    
+
     for record in records:
         assert isinstance(record, ServiceAtLocationResponse)
         assert record.id in ids

@@ -101,7 +101,7 @@ class AirtableData[T](DataEntity[T]):
                 ]
             )
             params['filterByFormula'] = f"OR({conditionals})"
-        
+
         raw_records = self._make_request(
             endpoint=table_id,
             params=params,
@@ -119,7 +119,7 @@ class AirtableData[T](DataEntity[T]):
             filters=[Filter(key=col, value=id) for col in self.id_columns],
         )
         return results[0] if results else None
-    
+
     def get_bulk(
         self,
         ids: builtins.list[int],
@@ -127,4 +127,4 @@ class AirtableData[T](DataEntity[T]):
         return [
             self.get(id=id) for id in ids
         ]
-        
+

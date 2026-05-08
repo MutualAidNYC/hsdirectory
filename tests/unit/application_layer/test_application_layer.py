@@ -271,7 +271,7 @@ def expected_service_at_location_with_no_locations_result(
                 notes=base_schedule_response.notes,
             )
         ],
-    )    
+    )
 
 def _test_data(
     model_class: type[BaseModel],
@@ -280,7 +280,7 @@ def _test_data(
     return TestData(
         model_class=model_class,
         data={
-            resp.id: resp for resp in example_responses 
+            resp.id: resp for resp in example_responses
         },
     )
 

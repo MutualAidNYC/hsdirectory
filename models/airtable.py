@@ -2,7 +2,6 @@
 
 from pydantic import BaseModel
 
-
 class OrganizationResponse(BaseModel):
     id: str
     name: str

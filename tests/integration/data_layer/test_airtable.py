@@ -3,7 +3,6 @@ import pytest
 from data_layer.airtable import AirtableData, Filter, Table
 from models.airtable import ServiceAtLocationResponse
 
-
 @pytest.fixture
 def airtable_client() -> AirtableData[ServiceAtLocationResponse]:
     return AirtableData(

@@ -22,7 +22,6 @@ from models.hsds import (
     ServiceAtLocation,
 )
 
-
 def list_service_at_locations(
     service_at_locations_table: DataEntity[ServiceAtLocationResponse],
     services_table: DataEntity[ServiceResponse],

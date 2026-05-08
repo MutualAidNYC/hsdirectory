@@ -25,7 +25,6 @@ from models.hsds import (
     ServiceAtLocation,
 )
 
-
 @pytest.fixture
 def base_address_response() -> AddressResponse:
     return AddressResponse(

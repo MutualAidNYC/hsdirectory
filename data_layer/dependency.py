@@ -10,7 +10,6 @@ from models.airtable import (
     ServiceResponse,
 )
 
-
 def get_service_table() -> AirtableData:
     return AirtableData(
         model_class=ServiceResponse, table=Table(name="services")

@@ -3,7 +3,6 @@ import pytest
 from models.hsds import ServiceAtLocation
 from routes import service_at_locations
 
-
 @pytest.fixture
 def test_id() -> str:
     return "recdCdKEoExUm5bjs"

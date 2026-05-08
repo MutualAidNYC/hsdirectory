@@ -25,6 +25,7 @@ ignore = [
 # Groups imports so your standard libs stay separate from third-party ones
 combine-as-imports = true
 force-single-line = false
+lines-after-imports = 1
 
 [tool.ruff.format]
 # Settings for 'ruff format' (the Black replacement)

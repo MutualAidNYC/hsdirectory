@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { SearchBar } from './SearchBar';
 
 interface HeaderProps {
@@ -9,8 +12,12 @@ interface HeaderProps {
 /**
  * Site header with navigation and optional search bar.
  * Dark teal background matching mutualaid.nyc (#204045).
+ * Search bar auto-hides on homepage where a hero search already exists.
  */
-export function Header({ showSearch = true }: HeaderProps) {
+export function Header({ showSearch }: HeaderProps) {
+    const pathname = usePathname();
+    const isHome = pathname === '/';
+    const shouldShowSearch = showSearch ?? !isHome;
     return (
         <header className="sticky top-0 z-50 w-full bg-[var(--nav-bg)]">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -29,7 +36,7 @@ export function Header({ showSearch = true }: HeaderProps) {
                 </Link>
 
                 {/* Search Bar (compact) */}
-                {showSearch && (
+                {shouldShowSearch && (
                     <div className="hidden md:block flex-1 max-w-md mx-8">
                         <SearchBar size="sm" placeholder="Search resources..." />
                     </div>

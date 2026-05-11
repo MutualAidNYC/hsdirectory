@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import builtins
 from time import sleep
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Optional, List
 
 import httpx
 
@@ -34,7 +36,7 @@ TABLE_IDS = {
 
 T = TypeVar('T')
 
-class AirtableData[T](DataEntity[T]):
+class AirtableData(DataEntity[T]):
     def __init__(
         self,
         model_class: type[T],

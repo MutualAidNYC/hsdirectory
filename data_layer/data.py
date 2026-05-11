@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import builtins
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, Optional, List
 
 from pydantic import BaseModel
+
+T = TypeVar('T', bound=BaseModel)
 
 class Table(BaseModel):
     name: str
@@ -13,7 +18,7 @@ class Filter(BaseModel):
     key: str
     value: str
 
-class DataEntity[T: BaseModel](ABC):
+class DataEntity(ABC, Generic[T]):
     def __init__(self, model_class: type[T]):
         self.model_class = model_class
         super().__init__()
@@ -40,7 +45,7 @@ class DataEntity[T: BaseModel](ABC):
     ) -> builtins.list[T]:
         ...
 
-class TestData[T](DataEntity[T]):
+class TestData(DataEntity[T]):
     def __init__(self, model_class: type[T], data: dict[str, T]):
         super().__init__(model_class)
         self.data = data

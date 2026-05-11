@@ -24,7 +24,10 @@ SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
 
 API_URL = "https://hsds-api.devin-d41.workers.dev"
-SYNC_SECRET = os.environ.get("SYNC_SECRET", "hsds-sync-admin-2026")
+SYNC_SECRET = os.environ.get("SYNC_SECRET", "")
+if not SYNC_SECRET:
+    # Checked later in main() — but warn early
+    pass
 GOOGLE_KEY = os.environ.get("GOOGLE_GEOCODING_API_KEY", "")
 
 # NYC center for proximity filter
@@ -98,6 +101,9 @@ def upload_batch(entries: dict):
 def main():
     if not GOOGLE_KEY:
         print("Set GOOGLE_GEOCODING_API_KEY environment variable")
+        sys.exit(1)
+    if not SYNC_SECRET:
+        print("Set SYNC_SECRET environment variable")
         sys.exit(1)
 
     print("Fetching addresses from D1...")

@@ -1,0 +1,40 @@
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+pythonpath = ["."]
+
+[tool.ruff]
+# Target the Python version you are using
+target-version = "py312"
+line-length = 100
+
+include = [
+    "models/airtable.py",
+    "tests/**/*.py",
+    "data_layer/**/*.py",
+    "application_layer/**/*.py",
+]
+
+[tool.ruff.lint]
+# E: pycodestyle errors, F: Pyflakes, I: isort, B: bugbear, UP: pyupgrade
+select = ["E", "F", "I", "B", "UP", "ANN", "W"]
+ignore = [
+    "ANN204", # Ignore __init__ method missing type annotations
+] 
+
+[tool.ruff.lint.isort]
+# Groups imports so your standard libs stay separate from third-party ones
+lines-after-imports = 1
+
+[tool.ruff.format]
+# Settings for 'ruff format' (the Black replacement)
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+
+[tool.ruff.lint.flake8-type-checking]
+# Fixes Pydantic errors where types are accidentally hidden from runtime
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN201"]

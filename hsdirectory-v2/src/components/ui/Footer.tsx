@@ -38,7 +38,7 @@ export function Footer() {
                             href="https://openreferral.org"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:opacity-100 underline transition-opacity"
+                            className="hover:no-underline underline transition-opacity"
                             style={{ color: 'inherit' }}
                         >
                             Open Referral HSDS

@@ -87,8 +87,12 @@ organizations.get("/", async (c) => {
     allOrgs.push(orgDict);
   }
 
-  // Sort by service count descending
-  allOrgs.sort((a, b) => ((b.service_count as number) || 0) - ((a.service_count as number) || 0));
+  // Sort by name (case-insensitive)
+  allOrgs.sort((a, b) => {
+    const nameA = ((a.name as string) || "").toLowerCase();
+    const nameB = ((b.name as string) || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 
   // Paginate
   const start = (page - 1) * perPage;

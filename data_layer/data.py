@@ -27,7 +27,8 @@ class DataEntity(ABC, Generic[T]):
     def list(
         self,
         filters: list[Filter] | None = None,
-        max: int | None = None,
+        offset: int = 0,
+        limit: int | None = None,
     ) -> list[T]:
         ...
 
@@ -53,16 +54,17 @@ class TestData(DataEntity[T]):
     def list(
         self,
         filters: list[Filter] | None = None,
-        max: int | None = None,
+        offset: int = 0,
+        limit: int | None = None,
     ) -> list[T]:
         return [
             self.data[index]
-            for index in self.data
+            for index in (self.data)
             if not filters or any(
                 getattr(self.data[index], filter.key) == filter.value
                 for filter in filters
             )
-        ]
+        ][offset : (offset + limit) if limit else None]
 
     def get(
         self,

@@ -55,10 +55,13 @@ class AirtableData(DataEntity[T]):
         self,
         endpoint: str,
         params: dict[str, Any],
+        offset: int = 0,
         limit: int | None = None,
     ) -> list[dict[str, Any]]:
         attempts = 0
         all_records = []
+
+        params['offset'] = offset
         with httpx.Client(timeout=30.0) as client:
             while attempts < BASE_RETRY_LIMIT:
                 url = f"{BASE_URL}/{self.base_id}/{endpoint}"
@@ -76,8 +79,8 @@ class AirtableData(DataEntity[T]):
                 records = data.get("records", [])
                 all_records.extend(records)
 
-                offset = data.get("offset")
-                if not offset:
+                params['offset'] = data.get("offset")
+                if not params['offset']:
                     break
 
                 if limit and len(all_records) > limit:
@@ -92,6 +95,7 @@ class AirtableData(DataEntity[T]):
     def list(
         self,
         filters: list[Filter] | None = None,
+        offset: int = 0,
         limit: int | None = None,
     ) -> list[T]:
         table_id = TABLE_IDS.get(self.table.name)
@@ -107,6 +111,7 @@ class AirtableData(DataEntity[T]):
         raw_records = self._make_request(
             endpoint=table_id,
             params=params,
+            offset=offset,
             limit=limit,
         )
         return [

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional, List
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class Filter(BaseModel):
     key: str
     value: str
 
-class DataEntity(ABC, Generic[T]):
+class DataEntity[T](ABC):
     def __init__(self, model_class: type[T]):
         self.model_class = model_class
         super().__init__()

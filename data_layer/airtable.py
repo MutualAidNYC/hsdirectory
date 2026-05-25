@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from time import sleep
-from typing import Any, TypeVar, Optional, List
+from typing import Any, TypeVar
 
 import httpx
 

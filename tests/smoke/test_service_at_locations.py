@@ -1,7 +1,7 @@
 import pytest
 
 from models.hsds import ServiceAtLocation
-from routes import service_at_locations
+from routes_updated import service_at_locations
 
 @pytest.fixture
 def test_id() -> str:
@@ -10,7 +10,7 @@ def test_id() -> str:
 @pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_service_at_locations_get(test_id: str):
-    sal = await service_at_locations.get_service_at_location_updated(
+    sal = await service_at_locations.get_service_at_location(
         sal_id=test_id
     )
 
@@ -19,7 +19,7 @@ async def test_service_at_locations_get(test_id: str):
 @pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_service_at_locations_get_not_found():
-    sal = await service_at_locations.get_service_at_location_updated(
+    sal = await service_at_locations.get_service_at_location(
         sal_id="nonexistent_id"
     )
 
@@ -28,7 +28,7 @@ async def test_service_at_locations_get_not_found():
 @pytest.mark.smoke
 @pytest.mark.asyncio
 async def test_service_at_locations_get_no_location(test_id: str):
-    sal = await service_at_locations.get_service_at_location_updated(
+    sal = await service_at_locations.get_service_at_location(
         sal_id=test_id
     )
 
@@ -40,7 +40,7 @@ async def test_service_at_locations_get_no_location(test_id: str):
 @pytest.mark.asyncio
 async def test_service_at_locations_list_service_at_locations():
     all_services_at_locations: list[ServiceAtLocation] = \
-        await service_at_locations.list_service_at_locations_updated(
+        await service_at_locations.list_service_at_locations(
             page=1,
             per_page=10,
             full=True,

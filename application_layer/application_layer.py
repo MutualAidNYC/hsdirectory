@@ -15,10 +15,12 @@ from models.hsds import (
     Address,
     Contact,
     Location,
+    Page,
     Phone,
     Schedule,
     ServiceAtLocation,
 )
+from typing import List
 
 def list_service_at_locations(
     service_at_locations_table: DataEntity[ServiceAtLocationResponse],
@@ -33,7 +35,7 @@ def list_service_at_locations(
     page: int = 1,
     per_page: int = 20,
     full: bool = False,
-) -> list[ServiceAtLocation]:
+) -> Page:
     services_at_locations = service_at_locations_table.list()
     services = services_table.list(
         filters=[
@@ -61,7 +63,7 @@ def list_service_at_locations(
         )
         results.append(res)
 
-    return results
+    return _paginate_results(results=results, page=page, per_page=per_page)
 
 
 def get_service_at_locations(
@@ -182,4 +184,23 @@ def _create_service_at_location_result(
         contacts=contacts,
         phones=phones,
         schedules=schedules,
+    )
+
+def _paginate_results(results: list[ServiceAtLocation], page: int, per_page: int) -> Page:
+    total = len(results)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_items = results[start:end]
+    
+    return Page(
+        total_items=total,
+        total_pages=total_pages,
+        page_number=page,
+        size=len(page_items),
+        first_page=(page == 1),
+        last_page=(page >= total_pages),
+        empty=(len(page_items) == 0),
+        contents=page_items,
     )

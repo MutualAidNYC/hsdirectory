@@ -59,7 +59,7 @@ class TestData(DataEntity[T]):
     ) -> list[T]:
         return [
             self.data[index]
-            for index in (self.data)
+            for index in self.data
             if not filters or any(
                 getattr(self.data[index], filter.key) == filter.value
                 for filter in filters

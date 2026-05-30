@@ -1,6 +1,6 @@
 import pytest
 
-from models.hsds import ServiceAtLocation
+from models.hsds import Page, ServiceAtLocation
 from routes_updated import service_at_locations
 
 @pytest.fixture
@@ -46,7 +46,7 @@ async def test_service_at_locations_list_service_at_locations():
             full=True,
         )
 
-    assert isinstance(all_services_at_locations, list)
+    assert isinstance(all_services_at_locations, Page)
     assert all(
-        isinstance(item, ServiceAtLocation) for item in all_services_at_locations
+        isinstance(item, ServiceAtLocation) for item in all_services_at_locations.contents
     )

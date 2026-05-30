@@ -1,3 +1,4 @@
+
 from config import Settings
 from data_layer.data import DataEntity, Filter
 from models.airtable import (
@@ -20,7 +21,6 @@ from models.hsds import (
     Schedule,
     ServiceAtLocation,
 )
-from typing import List
 
 def list_service_at_locations(
     service_at_locations_table: DataEntity[ServiceAtLocationResponse],
@@ -189,11 +189,11 @@ def _create_service_at_location_result(
 def _paginate_results(results: list[ServiceAtLocation], page: int, per_page: int) -> Page:
     total = len(results)
     total_pages = max(1, (total + per_page - 1) // per_page)
-    
+
     start = (page - 1) * per_page
     end = start + per_page
     page_items = results[start:end]
-    
+
     return Page(
         total_items=total,
         total_pages=total_pages,

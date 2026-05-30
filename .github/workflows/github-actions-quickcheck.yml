@@ -1,0 +1,20 @@
+name: GitHub Actions QuickCheck
+run-name: ${{ github.actor }} is validating testing/linting correctness for ${{ github.repository }} on ${{ runner.os }}
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "Triggered event: ${{ github.event_name }}"
+      - run: echo "Job runner os: ${{ runner.os }}"
+      - run: echo "Branch: ${{ github.ref }}"
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Lint check
+        run: |
+          ruff check .
+      - name: Run tests
+        run: |
+          pytests tests/
+      - run: echo "Final status: ${{ job.status }}."

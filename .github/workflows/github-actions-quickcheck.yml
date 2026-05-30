@@ -1,5 +1,5 @@
 name: GitHub Actions QuickCheck
-run-name: ${{ github.actor }} is validating testing/linting correctness for ${{ github.repository }} on ${{ runner.os }}
+run-name: ${{ github.actor }} is validating testing/linting correctness for ${{ github.repository }}
 on: [push]
 jobs:
   Explore-GitHub-Actions:
@@ -7,7 +7,6 @@ jobs:
     steps:
       - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "Triggered event ${{ github.event_name }}"
-      - run: echo "Job runner os ${{ runner.os }}"
       - run: echo "Branch ${{ github.ref }}"
       - name: Check out repository code
         uses: actions/checkout@v6

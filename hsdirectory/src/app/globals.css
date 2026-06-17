@@ -86,8 +86,10 @@ h2 {
   line-height: 1.4;
 }
 
-a {
-  color: var(--primary);
+@layer base {
+  a {
+    color: var(--primary);
+  }
 }
 
 /* Focus styles that work on all background colors and removes the default browser outline to prevent doubling */
@@ -143,4 +145,32 @@ a {
   font-size: 1.5rem;
   margin: 0.25rem 0.25rem 0;
   padding: 0.5rem;
+}
+
+/* MapLibre popup content */
+.popup-content {
+  padding: 8px;
+  max-width: 220px;
+}
+
+.popup-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+.popup-org {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.popup-link {
+  color: var(--primary);
+  font-size: 12px;
+  text-decoration: underline;
+  display: inline-block;
+  margin-top: 4px;
 }

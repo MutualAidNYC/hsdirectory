@@ -39,15 +39,13 @@ export function Header({ showSearch = true }: HeaderProps) {
                 <nav className="flex items-center gap-4 md:gap-6">
                     <Link
                         href="/services"
-                        className="text-sm font-semibold hover:text-[var(--highlight)] transition-colors tracking-tight"
-                        style={{ color: '#FFFFFF' }}
+                        className="text-sm font-semibold text-nav-text hover:text-[var(--highlight)] transition-colors tracking-tight"
                     >
                         Resources
                     </Link>
                     <Link
                         href="/organizations"
-                        className="text-sm font-semibold hover:text-[var(--highlight)] transition-colors tracking-tight"
-                        style={{ color: '#FFFFFF' }}
+                        className="text-sm font-semibold text-nav-text hover:text-[var(--highlight)] transition-colors tracking-tight"
                     >
                         Groups
                     </Link>

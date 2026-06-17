@@ -2,19 +2,6 @@ import Link from "next/link";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { getServices, getOrganizations, getMapServices } from "@/lib/api";
 
-/**
- * Warm earthy color palette for category cards (mutualaid.nyc style).
- */
-const CARD_COLORS = [
-  { bg: "bg-[#fce8e5]", text: "text-[#8F2D24]" },
-  { bg: "bg-[#ebf3f3]", text: "text-[#204045]" },
-  { bg: "bg-[#fdf7e6]", text: "text-[#6b5a1e]" },
-  { bg: "bg-[#f3ebf1]", text: "text-[#47133d]" },
-  { bg: "bg-[#e6f0e8]", text: "text-[#204045]" },
-  { bg: "bg-[#fce8e5]", text: "text-[#8F2D24]" },
-  { bg: "bg-[#ebf3f3]", text: "text-[#204045]" },
-  { bg: "bg-[#fdf7e6]", text: "text-[#6b5a1e]" },
-];
 
 /** Terms to exclude from the homepage grid. */
 const EXCLUDED_TERMS = new Set(["-Not Listed", "Not Listed"]);
@@ -72,8 +59,7 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <Link
               href="/services"
-              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-md hover:shadow-lg transition-all"
-              style={{ color: "#FFFFFF" }}
+              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-md hover:shadow-lg transition-all text-white"
             >
               <svg className="w-8 h-8" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -84,8 +70,7 @@ export default async function Home() {
 
             <Link
               href="https://mutualaid.nyc/get-involved/"
-              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] shadow-md hover:shadow-lg transition-all"
-              style={{ color: "#FFFFFF" }}
+              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] shadow-md hover:shadow-lg transition-all text-white"
             >
               <svg className="w-8 h-8" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -96,8 +81,7 @@ export default async function Home() {
 
             <Link
               href="https://mutualaid.nyc/for-groups-organizers/"
-              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--tertiary)] hover:opacity-80 shadow-md hover:shadow-lg transition-all"
-              style={{ color: "#FFFFFF" }}
+              className="group flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--tertiary)] hover:opacity-80 shadow-md hover:shadow-lg transition-all text-white"
             >
               <svg className="w-8 h-8" aria-hidden="true"fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -125,13 +109,12 @@ export default async function Home() {
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {categories.map((category, index) => {
-                const color = CARD_COLORS[index % CARD_COLORS.length];
+              {categories.map((category) => {
                 return (
                   <Link
                     key={category.name}
                     href={`/services?category=${encodeURIComponent(category.name)}`}
-                    className={`group flex items-center gap-3 p-5 rounded-2xl ${color.bg} border border-[var(--card-border)] hover:shadow-md transition-all`}
+                    className="group flex items-center gap-3 p-5 rounded-2xl bg-card-bg border border-[var(--card-border)] hover:shadow-md transition-all"
                   >
                     <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
                       {category.icon ? (
@@ -145,7 +128,7 @@ export default async function Home() {
                         <span className="w-6 h-6 rounded-full bg-black/10 block" />
                       )}
                     </span>
-                    <span className={`text-sm font-semibold ${color.text}`}>
+                    <span className="text-sm font-semibold text-foreground">
                       {category.name}
                     </span>
                   </Link>

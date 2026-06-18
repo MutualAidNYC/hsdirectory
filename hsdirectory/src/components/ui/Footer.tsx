@@ -32,7 +32,7 @@ export function Footer() {
                     </nav>
 
                     {/* Attribution */}
-                    <p className="text-sm text-[var(--nav-text)] opacity-50">
+                    <p className="text-sm text-[var(--nav-text)]">
                         Powered by{' '}
                         <a
                             href="https://openreferral.org"

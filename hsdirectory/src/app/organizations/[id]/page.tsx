@@ -146,7 +146,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                                     Description
                                 </h2>
                                 <div className="prose max-w-none">
-                                    <p className="text-[var(--muted)] whitespace-pre-wrap">
+                                    <p className="text-[var(--foreground)] whitespace-pre-wrap">
                                         {organization.description}
                                     </p>
                                 </div>
@@ -227,7 +227,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                                 {organization.email && (
                                     <a
                                         href={`mailto:${organization.email}`}
-                                        className="flex items-center gap-3 text-[var(--muted)] hover:text-[var(--foreground)]"
+                                        className="flex items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]"
                                     >
                                         <svg className="w-5 h-5 shrink-0" role="img" aria-label="email" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

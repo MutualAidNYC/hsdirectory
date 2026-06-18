@@ -22,7 +22,7 @@ export function OrganizationCard({ organization }: OrganizationCardProps) {
                 </h3>
                 {/* Description */}
                 {organization.description && (
-                    <p className="mt-2 text-[var(--muted)] line-clamp-3">
+                    <p className="mt-2 text-[var(--foreground)] line-clamp-3">
                         {organization.description}
                     </p>
                 )}

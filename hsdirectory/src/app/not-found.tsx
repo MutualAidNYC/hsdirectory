@@ -21,7 +21,7 @@ export default function NotFound() {
                 </h1>
 
                 {/* Description */}
-                <p className="text-[var(--muted)] mb-8">
+                <p className="text-[var(--foreground)] mb-8">
                     Sorry, we couldn&apos;t find the page you&apos;re looking for.
                     It may have been moved or deleted.
                 </p>

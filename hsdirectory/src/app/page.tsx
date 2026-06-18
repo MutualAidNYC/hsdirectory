@@ -38,10 +38,10 @@ export default async function Home() {
             <h1 className="font-display text-5xl md:text-6xl font-bold text-[var(--secondary)] mb-6">
               Mutual Aid <span className="bg-[var(--highlight)] text-[var(--tertiary)] px-2">NYC</span>
             </h1>
-            <p className="text-xl text-[var(--muted)] mb-4">
+            <p className="text-xl text-[var(--foreground)] mb-4">
               We help build and strengthen local mutual aid networks.
             </p>
-            <p className="text-lg text-[var(--muted)] mb-10">
+            <p className="text-lg text-[var(--foreground)] mb-10">
               Search our directory of {stats.resources.toLocaleString()} resources 
               from {stats.groups.toLocaleString()} groups
             </p>

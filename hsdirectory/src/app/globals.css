@@ -47,8 +47,6 @@
   --color-card-border: var(--card-border);
   --color-muted: var(--muted);
   --color-section-alt: var(--section-alt);
-  --color-nav-bg: var(--nav-bg);
-  --color-nav-text: var(--nav-text);
   --font-sans: var(--font-karla), system-ui, sans-serif;
   --font-display: var(--font-poppins), sans-serif;
 }
@@ -138,6 +136,18 @@ h2 {
 /* Display font utility */
 .font-display {
   font-family: var(--font-display);
+}
+
+/* Nav link — shared style for header navigation links */
+.nav-link {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--nav-text);
+}
+
+.nav-link:hover {
+  text-decoration: underline;
 }
 
 .maplibregl-popup-close-button {

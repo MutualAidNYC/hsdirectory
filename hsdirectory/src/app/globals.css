@@ -31,6 +31,9 @@
   --footer-social-bg: #c24532;
   --border-width: 4px;
 
+  /* Baseline font variables — next/font overrides these on body via CSS class */
+  --font-karla: Karla, sans-serif;
+  --font-poppins: Poppins, sans-serif;
   --font-header: var(--font-poppins), sans-serif;
   --font-body: var(--font-karla), sans-serif;
 }
@@ -47,8 +50,6 @@
   --color-card-border: var(--card-border);
   --color-muted: var(--muted);
   --color-section-alt: var(--section-alt);
-  --font-sans: var(--font-karla), system-ui, sans-serif;
-  --font-display: var(--font-poppins), sans-serif;
 }
 
 /* No dark mode — matches mutualaid.nyc light-only design */

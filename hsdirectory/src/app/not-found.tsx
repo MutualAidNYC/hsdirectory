@@ -28,20 +28,10 @@ export default function NotFound() {
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center justify-center px-6 py-3 rounded-xl 
-              border border-[var(--card-border)] text-[var(--foreground)] opacity-70
-              hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
-                    >
+                    <Link href="/" className="btn btn-primary">
                         Back To Homepage
                     </Link>
-                    <Link
-                        href="/services"
-                        className="inline-flex items-center justify-center px-6 py-3 rounded-xl 
-              border border-[var(--card-border)] text-[var(--foreground)] opacity-70
-              hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
-                    >
+                    <Link href="/services" className="btn btn-primary">
                         Search For Resources
                     </Link>
                 </div>

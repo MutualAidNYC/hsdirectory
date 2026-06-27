@@ -341,9 +341,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         {/* Back Button */}
                         <Link
                             href="/services"
-                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl 
-                border border-[var(--card-border)] text-[var(--foreground)] opacity-70
-                hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
+                            className="btn btn-secondary w-full gap-2"
                         >
                             <svg className="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

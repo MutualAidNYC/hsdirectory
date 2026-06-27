@@ -438,7 +438,7 @@ export default function MapPageClient({
                 {(searchQuery || selectedNeed || selectedCommunity || selectedBorough) && (
                     <button
                         onClick={handleClearFilters}
-                        className="w-full px-4 py-2 text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] hover:bg-[var(--tag-coral-bg)] rounded-lg transition-colors"
+                        className="btn btn-accent w-full"
                     >
                         Clear All Filters
                     </button>

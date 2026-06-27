@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  /* Exact mutualaid.nyc palette */
+  /* mutualaid.nyc palette */
+  --color-white: #ffffff;
   --background: #f5efe0;
   --foreground: #000000;
   --primary: #8F2D24;
@@ -14,7 +15,7 @@
   --highlight: #f7cf56;
   --highlight-alt: #a4cacb;
   --highlight-alt-bg: #ebf3f3;
-  --card-bg: #FFFFFF;
+  --card-bg: var(--color-white);
   --card-border: #E8E2DA;
   --muted: #586069;
   --section-alt: #ede8e1;
@@ -27,7 +28,7 @@
   --tag-gold-bg: #fdf7e6;
   --tag-gold-text: #6b5a1e;
   --nav-bg: #204045;
-  --nav-text: #FFFFFF;
+  --nav-text: var(--color-white);
   --footer-social-bg: #c24532;
   --border-width: 4px;
 
@@ -92,7 +93,7 @@ h2 {
 
 /* Focus styles that work on all background colors and removes the default browser outline to prevent doubling */
 *:focus-visible {
-  box-shadow: 0 0 0 2px #ffffff,
+  box-shadow: 0 0 0 2px var(--color-white),
               0 0 0 4px var(--primary);
   outline: none;
 }
@@ -137,6 +138,48 @@ h2 {
 /* Display font utility */
 .font-display {
   font-family: var(--font-display);
+}
+
+/* Buttons — matches mutualaid.nyc style */
+.btn {
+  font-family: var(--font-header);
+  font-weight: 600;
+  border-radius: 1000px;
+  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+  border: 2px solid transparent;
+  line-height: 1.2;
+}
+
+.btn:hover {
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+/* Filled teal — "primary" action */
+.btn-primary {
+  background-color: var(--secondary);
+  color: var(--color-white);
+  border-color: var(--secondary);
+}
+
+/* Outline purple — "secondary" action */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--tertiary);
+  border-color: var(--tertiary);
+}
+
+/* Light teal fill — "accent" action */
+.btn-accent {
+  background-color: var(--highlight-alt);
+  color: var(--secondary);
+  border-color: var(--highlight-alt);
 }
 
 /* Nav link — shared style for header navigation links */

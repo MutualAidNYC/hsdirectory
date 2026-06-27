@@ -17,7 +17,6 @@ interface NavSubmenuProps {
 /**
  * Accessible nav submenu using the disclosure pattern.
  * Opens on hover or button activation; closes on Escape or focus leaving the container.
- * Nav link styles live in globals.css (.nav-link).
  */
 export function NavSubmenu({ label, items }: NavSubmenuProps) {
     const [open, setOpen] = useState(false);

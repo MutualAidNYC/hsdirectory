@@ -24,7 +24,7 @@ export function Header() {
                 <div className="flex h-[80px] xl:h-[160px] items-center justify-between mx-[42.36px]">
 
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-3">
+                    <a href="https://mutualaid.nyc" className="flex items-center gap-3">
                         <Image
                             src="/logo.png"
                             alt="Mutual Aid NYC logo"
@@ -32,7 +32,7 @@ export function Header() {
                             height={130}
                             className="w-[60px] h-[60px] xl:w-[120px] xl:h-[120px]"
                         />
-                    </Link>
+                    </a>
 
                     {/* Hamburger — mobile only */}
                     <button

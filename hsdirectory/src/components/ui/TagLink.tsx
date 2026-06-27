@@ -28,8 +28,8 @@ export function TagLink({
     const baseClasses = `inline-flex items-center rounded-full font-medium transition-opacity hover:opacity-80 ${sizeClasses}`;
     
     const colorClasses = colorScheme === 'coral'
-        ? "bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)]"
-        : "bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)]";
+        ? "bg-[var(--tag-coral-bg)] text-[var(--tag-coral-text)] border border-[var(--tag-coral-text)]"
+        : "bg-[var(--tag-olive-bg)] text-[var(--tag-olive-text)] border border-[var(--tag-olive-text)]";
         
     const combinedClasses = `${baseClasses} ${colorClasses} ${className}`.trim();
 

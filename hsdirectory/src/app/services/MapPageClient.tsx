@@ -504,7 +504,7 @@ function ResourceCard({ service, userLocation, onViewOnMap }: {
                     {service.name}
                 </h3>
                 {distance !== null && (
-                    <span className="flex-shrink-0 text-xs font-medium text-[var(--secondary)] bg-[var(--tag-blue-bg)] px-2 py-0.5 rounded-full whitespace-nowrap">
+                    <span className="flex-shrink-0 text-xs font-medium text-[var(--secondary)] bg-[var(--tag-blue-bg)] border border-[var(--tag-blue-text)] px-2 py-0.5 rounded-full whitespace-nowrap">
                         {distance < 0.1 ? '< 0.1' : distance.toFixed(1)} mi
                     </span>
                 )}

@@ -46,7 +46,7 @@ export default async function Home() {
           </div>
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-xl mb-5">
-              Search our directory of {stats.resources.toLocaleString()} resources
+              Search the directory of {stats.resources.toLocaleString()} resources
               from {stats.groups.toLocaleString()} groups
             </p>
           </div>
@@ -55,10 +55,10 @@ export default async function Home() {
           </div>
           <div className="flex justify-center gap-4 mt-10">
             <a href="https://mutualaid.nyc/submit-a-resource/" className="btn btn-primary">
-              Submit a resource
+              Submit a Resource
             </a>
             <a href="https://mutualaid.nyc/suggest-a-change/" className="btn btn-primary">
-              Suggest a change
+              Suggest a Change
             </a>
           </div>
         </div>

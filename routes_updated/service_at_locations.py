@@ -30,7 +30,7 @@ async def get_service_at_location(sal_id: str):
         accessibilities_table=accessibility_table,
     )
 
-@router.get("/list", response_model=Page)
+@router.get("", response_model=Page)
 async def list_service_at_locations(
     search: Optional[str] = None,
     page: int = 1,

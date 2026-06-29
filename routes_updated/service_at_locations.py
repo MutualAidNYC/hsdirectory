@@ -9,7 +9,7 @@ from models.hsds import Page, ServiceAtLocation
 router = APIRouter(prefix="/service_at_locations", tags=["service_at_locations"])
 
 
-@router.get("", response_model=ServiceAtLocation)
+@router.get("{/sal_id}", response_model=ServiceAtLocation)
 async def get_service_at_location(sal_id: str):
     service_at_location_table = dependency.get_service_at_locations_table()
     addresses_table = dependency.get_addresses_table()

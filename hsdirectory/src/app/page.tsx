@@ -32,7 +32,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="pt-10 pb-12 md:py-30 px-4 bg-[var(--background)]">
+      <section className="pt-10 pb-12 md:py-28 px-4 bg-[var(--background)]">
         <div className="container mx-auto">
           <div className="max-w-5xl mx-auto text-center">
             <h1 className="font-black text-4xl md:text-6xl text-[var(--secondary)] mb-6">

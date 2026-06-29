@@ -7,13 +7,13 @@ import { Footer } from "@/components/ui/Footer";
 const karla = Karla({
   variable: "--font-karla",
   subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  weight: ["600", "700", "900"],
 });
 
 export const metadata: Metadata = {

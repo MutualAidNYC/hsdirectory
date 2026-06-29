@@ -131,7 +131,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     {/* Header */}
                     <div>
                         <div className="flex items-start justify-between gap-4 mb-4">
-                            <h1 className="font-display text-3xl font-bold text-[var(--foreground)]">
+                            <h1 className="text-3xl font-bold text-[var(--foreground)]">
                                 {service.name}
                             </h1>
                         </div>

@@ -69,7 +69,7 @@ export default async function Home() {
         <section className="pt-10 pb-16 px-4 bg-[var(--section-alt)]">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="font-display text-2xl font-bold text-[var(--foreground)]">
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">
                 Browse By Category
               </h2>
               <Link

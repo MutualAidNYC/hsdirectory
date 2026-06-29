@@ -16,7 +16,7 @@ export default function NotFound() {
                 </div>
 
                 {/* Title */}
-                <h1 className="font-display text-4xl font-bold text-[var(--foreground)] mb-4">
+                <h1 className="text-4xl font-bold text-[var(--foreground)] mb-4">
                     404 - Page Not Found
                 </h1>
 

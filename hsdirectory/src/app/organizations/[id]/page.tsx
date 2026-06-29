@@ -135,7 +135,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
                     {/* Group Header */}
                     <div>
                         {/* Name */}
-                        <h1 className="font-display text-3xl font-bold text-[var(--foreground)] mb-4">
+                        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-4">
                             {organization.name}
                         </h1>
 
@@ -156,7 +156,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
                     {/* Resources Section */}
                     <section>
-                        <h2 className="font-display text-2xl font-bold text-[var(--foreground)] mb-6">
+                        <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6">
                             Resources ({relatedServices.length})
                         </h2>
 

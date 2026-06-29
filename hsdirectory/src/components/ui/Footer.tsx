@@ -10,7 +10,7 @@ export function Footer() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     {/* Branding */}
                     <div className="flex items-center gap-2">
-                        <span className="font-display text-lg font-bold text-[var(--nav-text)]">
+                        <span className="text-lg font-bold text-[var(--nav-text)]">
                             Mutual Aid <span className="text-[var(--highlight)]">NYC</span>
                         </span>
                     </div>

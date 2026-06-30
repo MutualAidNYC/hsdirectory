@@ -57,7 +57,6 @@ function toGeoJSON(locations: MapLocation[]): GeoJSON.FeatureCollection {
             properties: {
                 id: loc.serviceId || loc.id,
                 name: loc.serviceName || loc.name,
-                locationName: loc.name,
                 serviceId: loc.serviceId || '',
                 orgName: loc.orgName || '',
             },
@@ -88,9 +87,9 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
             sources: {
                 osm: {
                     type: 'raster',
-                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tiles: ['https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'],
                     tileSize: 256,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 },
             },
             layers: [{
@@ -187,20 +186,12 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
                 const popup = new maplibregl.Popup({ offset: [0, -PIN_H] })
                     .setLngLat(coords)
                     .setHTML(`
-                        <div style="padding: 8px; max-width: 220px;">
-                            <h4 style="font-weight: 600; margin-bottom: 4px; color: #111; font-size: 14px;">
-                                ${props.name}
-                            </h4>
-                            ${props.orgName 
-                            ? `<p style="color: #444; font-size: 13px; font-weight: 500; margin-bottom: 2px;">${props.orgName}</p>`
+                        <div class="popup-content">
+                            <h4 class="popup-title">${props.name}</h4>
+                            ${props.orgName
+                            ? `<p class="popup-org">${props.orgName}</p>`
                             : ''}
-                            ${props.locationName && props.locationName !== props.name
-                            ? `<p style="color: #666; font-size: 12px; margin-bottom: 8px;">${props.locationName}</p>`
-                            : ''}
-                            <a href="${linkHref}"
-                               style="color: #8F2D24; font-size: 12px; text-decoration: underline; display: inline-block; margin-top: 4px;">
-                               ${linkText}
-                            </a>
+                            <a href="${linkHref}" class="popup-link">${linkText}</a>
                         </div>
                     `)
                     .addTo(map);
@@ -277,8 +268,7 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
     return (
         <div
             ref={mapContainer}
-            className="w-full h-full"
-            style={{ minHeight: '400px' }}
+            className="w-full h-full min-h-[400px]"
         />
     );
 }

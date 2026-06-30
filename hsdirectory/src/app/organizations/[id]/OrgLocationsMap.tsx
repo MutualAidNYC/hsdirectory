@@ -36,7 +36,7 @@ interface OrgLocationsMapProps {
  */
 export default function OrgLocationsMap({ locations }: OrgLocationsMapProps) {
     return (
-        <div style={{ height: '300px' }}>
+        <div className="h-[300px]">
             <MapViewDynamic locations={locations} />
         </div>
     );

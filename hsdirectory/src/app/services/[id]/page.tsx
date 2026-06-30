@@ -131,14 +131,14 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     {/* Header */}
                     <div>
                         <div className="flex items-start justify-between gap-4 mb-4">
-                            <h1 className="font-display text-3xl font-bold text-[var(--foreground)]">
+                            <h1 className="text-3xl font-bold text-[var(--foreground)]">
                                 {service.name}
                             </h1>
                         </div>
 
                         {/* Group/Organization Name - linked to org profile */}
                         {(service.group_name || service.organization) && (
-                            <p className="text-lg text-[var(--muted)] mb-4">
+                            <p className="text-lg text-[var(--foreground)] mb-4">
                                 <span className="font-medium">Group:</span>{' '}
                                 {resolvedOrgId ? (
                                     <Link
@@ -201,7 +201,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 Description
                             </h2>
                             <div className="prose max-w-none">
-                                <p className="text-[var(--muted)] whitespace-pre-wrap">
+                                <p className="text-[var(--foreground)] whitespace-pre-wrap">
                                     {service.description}
                                 </p>
                             </div>
@@ -228,7 +228,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                                     </h3>
                                                 )}
                                                 {sal.location.addresses?.length > 0 && (
-                                                    <div className="text-[var(--muted)]">
+                                                    <div className="text-[var(--foreground)]">
                                                         {sal.location.addresses.map((addr: any) => (
                                                             <p key={addr.id}>
                                                                 {[addr.address_1, addr.address_2, addr.city, addr.state_province, addr.postal_code]
@@ -260,7 +260,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 />
                                 {mapCoords.address && (
                                     <div className="p-4 border-t border-[var(--card-border)]">
-                                        <p className="text-sm text-[var(--muted)] mb-2">
+                                        <p className="text-sm text-[var(--foreground)] mb-2">
                                             {mapCoords.address}
                                         </p>
                                         <a
@@ -305,7 +305,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 {service.email && (
                                     <a
                                         href={`mailto:${service.email}`}
-                                        className="flex items-center gap-3 text-[var(--muted)] hover:text-[var(--foreground)]"
+                                        className="flex items-center gap-3 text-[var(--foreground)] hover:text-[var(--primary)]"
                                     >
                                         <svg className="w-5 h-5 shrink-0" role="img" aria-label="email" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -316,8 +316,8 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                                 )}
 
                                 {(service.phones?.length ?? 0) > 0 && service.phones!.map((phone: any) => (
-                                    <div key={phone.id} className="flex items-center gap-3 text-[var(--muted)]">
-                                        <svg className="w-5 h-5 shrink-0" role="img"aria-label="phone" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div key={phone.id} className="flex items-center gap-3 text-[var(--foreground)]">
+                                        <svg className="w-5 h-5 shrink-0" role="img" aria-label="phone" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                         </svg>
                                         <span>
@@ -341,9 +341,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                         {/* Back Button */}
                         <Link
                             href="/services"
-                            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl 
-                border border-[var(--card-border)] text-[var(--foreground)] opacity-70
-                hover:bg-[var(--section-alt)] hover:opacity-100 transition-all"
+                            className="btn btn-secondary w-full gap-2"
                         >
                             <svg className="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

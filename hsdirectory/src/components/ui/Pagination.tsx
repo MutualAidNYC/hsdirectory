@@ -64,7 +64,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
                 </Link>
             ) : (
                 <span className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-          text-[var(--muted)] opacity-40 cursor-not-allowed">
+          text-[var(--muted)] cursor-not-allowed">
                     Previous
                 </span>
             )}
@@ -101,7 +101,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
                 </Link>
             ) : (
                 <span className="flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium 
-          text-[var(--muted)] opacity-40 cursor-not-allowed">
+          text-[var(--muted)] cursor-not-allowed">
                     Next
                 </span>
             )}

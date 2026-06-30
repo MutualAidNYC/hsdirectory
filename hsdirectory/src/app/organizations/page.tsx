@@ -44,10 +44,10 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         <div className="container mx-auto px-4 py-8">
             {/* Page Header */}
             <div className="mb-8">
-                <h1 className="font-display text-3xl font-bold text-[var(--foreground)] mb-4">
+                <h1 className="text-3xl font-bold text-[var(--foreground)] mb-4">
                     Groups
                 </h1>
-                <p className="text-[var(--muted)]">
+                <p className="text-[var(--foreground)]">
                     {totalItems.toLocaleString()} {totalItems === 1 ? 'group' : 'groups'} providing community resources{query && ` for search term "${query}"`}
                 </p>
             </div>
@@ -76,7 +76,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                     <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">
                         {query ? `No results for "${query}"` : "No groups found"}
                     </h3>
-                    <p className="text-[var(--muted)]">
+                    <p className="text-[var(--foreground)]">
                         {query ? "Try a different search term." : "No groups are currently available."}
                     </p>
                 </div>

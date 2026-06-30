@@ -16,7 +16,7 @@ export function Footer() {
                     </div>
 
                     {/* Links */}
-                    <nav className="flex flex-wrap gap-6 text-sm]">
+                    <nav className="flex flex-wrap gap-6 text-sm">
                         <Link href="/services" className="text-[var(--nav-text)] underline hover:no-underline">
                             Resources
                         </Link>

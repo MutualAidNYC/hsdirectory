@@ -379,7 +379,7 @@ def test_list_service_at_locations_returns_only_published_services(
     expected_service_at_location_with_locations_result: ServiceAtLocation,
     expected_service_at_location_with_no_locations_result: ServiceAtLocation,
 ):
-    service_at_locations_results = application_layer.list_service_at_locations(
+    service_at_locations_page = application_layer.list_service_at_locations(
         service_at_locations_table=test_service_at_location_data,
         services_table=test_services_data,
         locations_table=test_locations_data,
@@ -391,6 +391,7 @@ def test_list_service_at_locations_returns_only_published_services(
         settings=test_settings,
         full=True,
     )
+    service_at_locations_results = service_at_locations_page.contents
 
     assert len(service_at_locations_results) == 1
     assert any(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional, List
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class Filter(BaseModel):
     key: str
     value: str
 
-class DataEntity(ABC, Generic[T]):
+class DataEntity[T](ABC):
     def __init__(self, model_class: type[T]):
         self.model_class = model_class
         super().__init__()
@@ -27,7 +27,8 @@ class DataEntity(ABC, Generic[T]):
     def list(
         self,
         filters: list[Filter] | None = None,
-        max: int | None = None,
+        offset: int = 0,
+        limit: int | None = None,
     ) -> list[T]:
         ...
 
@@ -53,7 +54,8 @@ class TestData(DataEntity[T]):
     def list(
         self,
         filters: list[Filter] | None = None,
-        max: int | None = None,
+        offset: int = 0,
+        limit: int | None = None,
     ) -> list[T]:
         return [
             self.data[index]
@@ -62,7 +64,7 @@ class TestData(DataEntity[T]):
                 getattr(self.data[index], filter.key) == filter.value
                 for filter in filters
             )
-        ]
+        ][offset : (offset + limit) if limit else None]
 
     def get(
         self,

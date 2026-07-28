@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./hsdirectory
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped

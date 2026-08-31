@@ -54,3 +54,6 @@ build/
 # Keys
 *.pem
 *.key
+
+# Agent instructions (local, not shared)
+CLAUDE.local.md

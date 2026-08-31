@@ -101,20 +101,7 @@ INFO - Initial sync complete
 
 **Verify:** Visit http://localhost:8080/docs to see the interactive API documentation.
 
-### 5. Build the geocoding cache (one-time)
-
-The map uses a local geocoding cache (`geocache.json`) to resolve street addresses to coordinates. This is **not** populated automatically by the sync — run this once after the API has synced data:
-
-```bash
-# From the repo root, with your venv active:
-python utils/geocoder.py
-```
-
-This queries the Nominatim geocoding API for every address in your dataset and writes results to `geocache.json`. It rate-limits itself to 1 request/second (Nominatim's usage policy), so expect it to take 1–3 minutes for a typical dataset.
-
-Re-run this script whenever you add new addresses to Airtable. The cache is additive — existing entries are preserved.
-
-### 6. Set up the frontend (Next.js)
+### 5. Set up the frontend (Next.js)
 
 ```bash
 cd hsdirectory
@@ -531,17 +518,12 @@ at-to-hsds/
 - Check CORS — the API allows all origins by default (`allow_origins=["*"]`)
 - In production, both services must be accessible to the browser
 
-### Map shows no pins
+### Map pins are missing
 
-The map resolves coordinates in priority order:
-1. `service_at_location` links → `locations` table (lat/lng fields in Airtable)
-2. Direct `locations` link on service
-3. `addresses` table → geocoded via `geocache.json`
+The map resolves coordinates by using`service_at_location` links → `locations` table (latitude/longitude fields in Airtable)
 
-If the map is empty:
-- **Missing `geocache.json`**: Run `python utils/geocoder.py` (see [Quick Start step 5](#5-build-the-geocoding-cache-one-time)). This is a manual one-time step, not automatic.
-- **Missing lat/lng on location records**: Ensure your `locations` table in Airtable has `latitude` and `longitude` fields populated.
-- **No `service_at_location` links**: Check that services are linked to locations via the `service_at_location` junction table — this is the HSDS 3.0 standard and the primary lookup path.
+- **Missing latitude/longitude on location records**: Coordinates are written by a button in Airtable that runs a script for a service or organization record in Airtable to geocode the address and stores the results on the linked `location`. Check the Airtable service or organization record and the locations table.
+- **No `service_at_location` links**: Check that services are linked to locations via the `service_at_location` junction table — this is the HSDS 3.0 standard.
 
 ---
 

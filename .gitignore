@@ -22,7 +22,6 @@ env/
 *.sqlite3
 
 # Data artifacts (regenerated on sync)
-geocache.json
 data/
 
 # Deployment (server-specific)

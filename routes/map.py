@@ -6,6 +6,7 @@ Serves service data with location info and filter categories for map page.
 from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
+from utils.address import format_address
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -99,13 +100,7 @@ async def get_map_services():
     address_lookup = {}
     for record in addresses:
         fields = record.get("fields", {})
-        addr_parts = [
-            fields.get("address_1", ""),
-            fields.get("city", ""),
-            fields.get("state_province", ""),
-            fields.get("postal_code", ""),
-        ]
-        address_lookup[record["id"]] = ", ".join(p for p in addr_parts if p)
+        address_lookup[record["id"]] = format_address(fields)
 
     # Build a lookup: service_airtable_id -> list of location_ids
     # via the service_at_location junction table.

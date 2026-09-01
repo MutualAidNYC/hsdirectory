@@ -6,6 +6,7 @@ Serves location data with coordinates for map rendering.
 from typing import List, Dict, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+from utils.address import format_address
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 
@@ -89,13 +90,7 @@ async def get_geocoded_locations(
     address_lookup = {}
     for record in addresses:
         fields = record.get("fields", {})
-        parts = [
-            fields.get("address_1"),
-            fields.get("city"),
-            fields.get("state_province"),
-            fields.get("postal_code"),
-        ]
-        address_lookup[record["id"]] = ", ".join(p for p in parts if p)
+        address_lookup[record["id"]] = format_address(fields)
     
     # Build geocoded locations from locations with coordinates
     geocoded_locations = []

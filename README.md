@@ -520,7 +520,7 @@ at-to-hsds/
 
 ### Map pins are missing
 
-The map resolves coordinates by using`service_at_location` links → `locations` table (latitude/longitude fields in Airtable)
+The map resolves coordinates by using `service_at_location` links → `locations` table (latitude/longitude fields in Airtable). There is no fallback: a service with no `service_at_location` link has no pin.
 
 - **Missing latitude/longitude on location records**: Coordinates are written by a button in Airtable that runs a script for a service or organization record in Airtable to geocode the address and stores the results on the linked `location`. Check the Airtable service or organization record and the locations table.
 - **No `service_at_location` links**: Check that services are linked to locations via the `service_at_location` junction table — this is the HSDS 3.0 standard.

@@ -6,7 +6,6 @@ Serves service data with location info and filter categories for map page.
 from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.haversine import haversine
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -106,10 +105,7 @@ async def get_map_services():
             fields.get("state_province", ""),
             fields.get("postal_code", ""),
         ]
-        address_lookup[record["id"]] = {
-            "formatted": ", ".join(p for p in addr_parts if p),
-            "location_ids": fields.get("location", []),
-        }
+        address_lookup[record["id"]] = ", ".join(p for p in addr_parts if p)
 
     # Build a lookup: service_airtable_id -> list of location_ids
     # via the service_at_location junction table.
@@ -148,7 +144,7 @@ async def get_map_services():
         addr_str = None
         for aid in loc.get("address_ids", []):
             if aid in address_lookup:
-                addr_str = address_lookup[aid].get("formatted")
+                addr_str = address_lookup[aid]
                 break
         if not addr_str:
             addr_str = loc.get("name")
@@ -180,46 +176,18 @@ async def get_map_services():
         longitude = None
         address = None
 
-        # Priority 1: locations linked via service_at_location junction table
-        # (HSDS-recommended pattern for service→location association)
-        sal_loc_ids = sal_location_lookup.get(record["id"], [])
-        for loc_id in sal_loc_ids:
+        # Locations come from the service_at_location junction table - the
+        # HSDS 3.0 pattern for service→location association, and the only path.
+        # A service with no service_at_location link gets no coordinates.
+        for loc_id in sal_location_lookup.get(record["id"], []):
             lat, lng, addr = _resolve_location(loc_id, location_lookup, address_lookup)
-            if lat and lng:
+            # Keep the address even when the location has no coordinates
+            if address is None and addr:
+                address = addr
+            if lat is not None and lng is not None:
                 latitude, longitude, address = lat, lng, addr
                 break
 
-        # Priority 2: locations linked directly on the service record
-        if not latitude:
-            for loc_id in (fields.get("locations", []) or []):
-                lat, lng, addr = _resolve_location(loc_id, location_lookup, address_lookup)
-                if lat and lng:
-                    latitude, longitude, address = lat, lng, addr
-                    break
-
-        # Priority 3: addresses linked directly on the service record
-        if not latitude:
-            for addr_id in (fields.get("addresses", []) or []):
-                if addr_id in address_lookup:
-                    addr = address_lookup[addr_id]
-                    if not address:
-                        address = addr.get("formatted")
-                    # Try via linked location
-                    for loc_id in addr.get("location_ids", []):
-                        if loc_id in location_lookup:
-                            loc = location_lookup[loc_id]
-                            if loc.get("latitude") and loc.get("longitude"):
-                                latitude = float(loc["latitude"])
-                                longitude = float(loc["longitude"])
-                                break
-                    if latitude:
-                        break
-        # Distance filter (50 miles from NYC)
-        if latitude is not None and longitude is not None:
-            if haversine(latitude, longitude, 40.7128, -74.0060) > 50.0:
-                latitude = None
-                longitude = None
-        
         # Get phone
         phone = None
         phone_ids = fields.get("phones", []) or []

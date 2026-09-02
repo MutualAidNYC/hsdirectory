@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
 from db.database import init_db
 from airtable.sync import get_sync
-from routes import root, services, organizations, taxonomies, locations, map
+from routes import root, services, organizations, taxonomies, map
 from routes_updated import service_at_locations
 
 # Configure logging
@@ -85,7 +85,6 @@ app.include_router(services.router)
 app.include_router(organizations.router)
 app.include_router(taxonomies.router)
 app.include_router(service_at_locations.router)
-app.include_router(locations.router)
 app.include_router(map.router)
 
 

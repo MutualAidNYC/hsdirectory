@@ -197,7 +197,6 @@ Key fields per table:
 | `GET` | `/taxonomies` | List taxonomies |
 | `GET` | `/taxonomy_terms` | List taxonomy terms |
 | `GET` | `/service_at_locations` | Service-location links |
-| `GET` | `/locations/geocoded` | Geocoded locations for map rendering |
 | `GET` | `/map/services` | Services with coordinates and filter categories |
 
 ### Documentation
@@ -478,7 +477,6 @@ at-to-hsds/
 │   ├── organizations.py       # GET /organizations, /organizations/{id}
 │   ├── taxonomies.py          # GET /taxonomies, /taxonomy_terms
 │   ├── service_at_locations.py
-│   ├── locations.py           # GET /locations/geocoded
 │   └── map.py                 # GET /map/services
 │
 ├── hsdirectory/               # Next.js frontend

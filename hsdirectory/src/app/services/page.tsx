@@ -16,6 +16,7 @@ export default async function ServicesPage() {
     let services: any[] = [];
     let needCategories: any[] = [];
     let communityCategories: any[] = [];
+    let serviceAreas: string[] = [];
     let error = null;
 
     try {
@@ -23,6 +24,7 @@ export default async function ServicesPage() {
         services = data.services;
         needCategories = data.needCategories;
         communityCategories = data.communityCategories;
+        serviceAreas = data.serviceAreas ?? [];
     } catch (e) {
         error = e instanceof Error ? e.message : "Failed to load services";
         console.error("Failed to fetch services:", e);
@@ -48,6 +50,7 @@ export default async function ServicesPage() {
                 services={services}
                 needCategories={needCategories}
                 communityCategories={communityCategories}
+                serviceAreas={serviceAreas}
             />
         </Suspense>
     );

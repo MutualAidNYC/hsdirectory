@@ -248,6 +248,7 @@ export interface MapService {
     communityFocus: string[];
     latitude?: number;
     longitude?: number;
+    service_areas?: string[];
 }
 
 export interface Category {
@@ -262,6 +263,7 @@ export interface MapDataResponse {
     services: MapService[];
     needCategories: Category[];
     communityCategories: Category[];
+    serviceAreas: string[];
 }
 
 /**

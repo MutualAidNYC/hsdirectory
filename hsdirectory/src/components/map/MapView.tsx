@@ -25,6 +25,18 @@ const PIN_W = 28;
 const PIN_H = 40;
 
 /**
+ * Basemap style. Defaults to OpenFreeMap "bright" — a free, open vector
+ * basemap built from OpenStreetMap data with no API key, no registration,
+ * no user tracking, and no request limits.
+ *
+ * OpenFreeMap can also be self-hosted; set NEXT_PUBLIC_BASEMAP_STYLE_URL to
+ * point at our own instance (or an alternative style) without a code change.
+ */
+const BASEMAP_STYLE_URL =
+    process.env.NEXT_PUBLIC_BASEMAP_STYLE_URL ||
+    'https://tiles.openfreemap.org/styles/bright';
+
+/**
  * Generate an SVG pin image as a data URL for loading into the map sprite.
  * Uses a simple, clean teardrop shape with a dot highlight.
  */
@@ -82,28 +94,9 @@ export default function MapView({ locations, highlightedId }: MapViewProps) {
         const bounds = new maplibregl.LngLatBounds();
         locations.forEach(loc => bounds.extend([loc.longitude, loc.latitude]));
 
-        const osmStyle: maplibregl.StyleSpecification = {
-            version: 8,
-            sources: {
-                osm: {
-                    type: 'raster',
-                    tiles: ['https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'],
-                    tileSize: 256,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                },
-            },
-            layers: [{
-                id: 'osm-tiles',
-                type: 'raster',
-                source: 'osm',
-                minzoom: 0,
-                maxzoom: 19,
-            }],
-        };
-
         const map = new maplibregl.Map({
             container: mapContainer.current,
-            style: osmStyle,
+            style: BASEMAP_STYLE_URL,
             center: locations.length > 0
                 ? [bounds.getCenter().lng, bounds.getCenter().lat]
                 : [-74.006, 40.7128],

@@ -22,7 +22,6 @@ env/
 *.sqlite3
 
 # Data artifacts (regenerated on sync)
-geocache.json
 data/
 
 # Deployment (server-specific)
@@ -54,3 +53,6 @@ build/
 # Keys
 *.pem
 *.key
+
+# Agent instructions (local, not shared)
+CLAUDE.local.md

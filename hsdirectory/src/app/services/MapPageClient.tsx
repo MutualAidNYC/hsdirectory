@@ -519,12 +519,16 @@ function ResourceCard({ service, userLocation, onViewOnMap }: {
                         </svg>
                         <span className="line-clamp-2">{service.address}</span>
                     </div>
-                    <button
-                        onClick={() => onViewOnMap(service.id)}
-                        className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[var(--card-border)] bg-[var(--section-alt)] text-xs font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white transition-colors"
-                    >
-                        View on map
-                    </button>
+                    {/* Only offer the map view button when there is a pin with coordinates to jump to.
+                        A location can have an address but no coordinates. */}
+                    {service.latitude != null && service.longitude != null && (
+                        <button
+                            onClick={() => onViewOnMap(service.id)}
+                            className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[var(--card-border)] bg-[var(--section-alt)] text-xs font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white transition-colors"
+                        >
+                            View on map
+                        </button>
+                    )}
                 </div>
             )}
 

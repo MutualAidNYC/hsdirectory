@@ -3,15 +3,12 @@ Geocoded Locations API endpoint.
 
 Serves location data with coordinates for map rendering.
 """
-import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+from utils.address import format_address
 
 router = APIRouter(prefix="/locations", tags=["locations"])
-
-GEOCACHE_FILE = Path(__file__).parent.parent / "geocache.json"
 
 
 class GeocodedLocation(BaseModel):
@@ -33,17 +30,6 @@ class GeocodedLocationsResponse(BaseModel):
     locations: List[GeocodedLocation]
 
 
-def load_geocache() -> Dict[str, Dict[str, Any]]:
-    """Load geocache from file."""
-    if GEOCACHE_FILE.exists():
-        try:
-            with open(GEOCACHE_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-
 @router.get("/geocoded", response_model=GeocodedLocationsResponse)
 async def get_geocoded_locations(
     limit: int = Query(500, ge=1, le=1000, description="Maximum locations to return"),
@@ -51,15 +37,14 @@ async def get_geocoded_locations(
     """
     Get all geocoded locations for map rendering.
     
-    Uses coordinates from locations table (which have lat/long directly)
-    and falls back to geocache for addresses without location coords.
+    Coordinates come from the locations table, written by a geocoding script added
+    to Airtable.
     """
     from airtable.client import get_airtable_client
     from config import get_settings
     
     client = get_airtable_client()
     settings = get_settings()
-    geocache = load_geocache()
     
     # Fetch locations (which have lat/long directly)
     locations = await client.list_records("locations")
@@ -100,18 +85,12 @@ async def get_geocoded_locations(
                     "name": fields.get("name"),
                 }
     
-    # Fetch addresses for fallback geocache
+    # Fetch addresses; each location's first linked address becomes its display string
     addresses = await client.list_records("addresses")
     address_lookup = {}
     for record in addresses:
         fields = record.get("fields", {})
-        address_lookup[record["id"]] = {
-            "address_1": fields.get("address_1"),
-            "city": fields.get("city"),
-            "state_province": fields.get("state_province"),
-            "postal_code": fields.get("postal_code"),
-            "location_ids": fields.get("location", []),
-        }
+        address_lookup[record["id"]] = format_address(fields)
     
     # Build geocoded locations from locations with coordinates
     geocoded_locations = []
@@ -124,13 +103,8 @@ async def get_geocoded_locations(
         # Get coordinates from location
         lat = fields.get("latitude")
         lng = fields.get("longitude")
-        
-        if not lat or not lng:
-            # Try to get from x-latitude/x-longitude
-            lat = fields.get("x-latitude")
-            lng = fields.get("x-longitude")
-        
-        if not lat or not lng:
+
+        if lat is None or lng is None:
             continue
         
         try:
@@ -158,10 +132,8 @@ async def get_geocoded_locations(
         # Build address string from linked addresses
         address_str = fields.get("name", "")
         address_ids = fields.get("addresses", [])
-        if address_ids and address_ids[0] in address_lookup:
-            addr = address_lookup[address_ids[0]]
-            parts = [addr.get("address_1", ""), addr.get("city", ""), addr.get("state_province", ""), addr.get("postal_code", "")]
-            address_str = ", ".join(p for p in parts if p)
+        if address_ids:
+            address_str = address_lookup.get(address_ids[0]) or address_str
         
         geocoded_locations.append(GeocodedLocation(
             id=loc_id,
@@ -177,33 +149,6 @@ async def get_geocoded_locations(
         
         if len(geocoded_locations) >= limit:
             break
-    
-    # If we don't have enough from locations, add from geocache
-    if len(geocoded_locations) < limit:
-        for addr_id, geocode in geocache.items():
-            if addr_id not in address_lookup:
-                continue
-            
-            # Skip duplicate coordinates
-            coord_key = f"{geocode['latitude']},{geocode['longitude']}"
-            if coord_key in seen_coords:
-                continue
-            seen_coords.add(coord_key)
-            
-            geocoded_locations.append(GeocodedLocation(
-                id=addr_id,
-                name=geocode.get("formatted_address"),
-                address=geocode.get("formatted_address"),
-                latitude=geocode["latitude"],
-                longitude=geocode["longitude"],
-                service_id=None,
-                service_name=None,
-                organization_id=None,
-                organization_name=None,
-            ))
-            
-            if len(geocoded_locations) >= limit:
-                break
     
     return GeocodedLocationsResponse(
         total=len(geocoded_locations),

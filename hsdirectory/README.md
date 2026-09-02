@@ -137,7 +137,7 @@ npm run build
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: TailwindCSS
-- **Maps**: MapLibre GL
+- **Maps**: MapLibre GL with the [OpenFreeMap](https://openfreemap.org/) bright basemap
 - **Fonts**: Karla (body) & Poppins (headings), loaded via `next/font/google`
 
 ## License

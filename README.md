@@ -124,23 +124,26 @@ npm run dev
 
 ## Airtable Base Setup
 
-Your Airtable base needs tables matching the HSDS schema. The API expects these table names (it maps them by internal Airtable Table IDs defined in `airtable/client.py`):
+Your Airtable base needs tables matching the HSDS 3.0 schema. The API gets them by internal Airtable Table ID; the name-to-ID mapping is defined in `airtable/client.py`, and `airtable/sync.py` dictates which are pulled into the local cache.
 
-| Airtable Table | HSDS Entity | Required? |
-|---------------|-------------|-----------|
+`/map/services` fetches the tables marked below on every request. The rest are read only through the HSDS endpoints, from the synced
+cache.
+
+| Airtable Table | HSDS Entity | Required by `/map/services` |
+|---------------|-------------|----------------------------|
 | `organizations` | Organizations | **Yes** |
 | `services` | Services | **Yes** |
 | `locations` | Locations | **Yes** |
 | `addresses` | Addresses | **Yes** |
+| `service_at_location` | Service to Location links | **Yes** |
+| `service_areas` | Service Areas | **Yes** |
+| `phones` | Phones | **Yes** |
 | `contacts` | Contacts | No |
-| `phones` | Phones | No |
 | `schedules` | Schedules | No |
 | `languages` | Languages | No |
 | `taxonomies` | Taxonomies | No |
 | `taxonomy_terms` | Taxonomy Terms | No |
 | `programs` | Programs | No |
-| `service_areas` | Service Areas | No |
-| `service_at_location` | Service-Location links | No |
 | `funding` | Funding | No |
 | `cost_option` | Cost Options | No |
 | `required_document` | Required Documents | No |

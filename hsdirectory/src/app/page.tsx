@@ -1,6 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
 import Link from "next/link";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { getServices, getOrganizations, getMapServices } from "@/lib/api";
+
+/** Category icons live in the repo, not Airtable — see that folder's README. */
+const ICON_DIR = "icons/need_categories";
+
+/** Category name to icon filename: lowercase, non-alphanumeric runs to "-". */
+function iconSlug(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 
 /** Terms to exclude from the homepage grid. */
@@ -11,7 +21,14 @@ const EXCLUDED_TERMS = new Set(["-Not Listed", "Not Listed"]);
  */
 export default async function Home() {
   let stats = { resources: 0, groups: 0 };
-  let categories: { name: string; icon?: string | null }[] = [];
+  let categories: { name: string }[] = [];
+
+  // Which icons exist on disk, so a category without one falls back to the
+  // placeholder dot instead of rendering a broken image.
+  const iconFiles = new Set(
+    fs.readdirSync(path.join(process.cwd(), "public", ICON_DIR))
+      .filter((f) => f.endsWith(".png"))
+  );
 
   try {
     const [servicesRes, orgsRes, mapData] = await Promise.all([
@@ -88,9 +105,9 @@ export default async function Home() {
                     className="group flex items-center gap-3 p-5 rounded-2xl bg-card-bg border border-[var(--card-border)] hover:shadow-md transition-all"
                   >
                     <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
-                      {category.icon ? (
+                      {iconFiles.has(`${iconSlug(category.name)}.png`) ? (
                         <img
-                          src={category.icon}
+                          src={`/${ICON_DIR}/${iconSlug(category.name)}.png`}
                           alt=""
                           className="w-full h-full object-contain"
                           loading="lazy"

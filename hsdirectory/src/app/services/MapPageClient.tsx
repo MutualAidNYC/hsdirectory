@@ -32,7 +32,6 @@ interface Service {
 
 interface Category {
     name: string;
-    icon?: string;
 }
 
 interface MapPageClientProps {

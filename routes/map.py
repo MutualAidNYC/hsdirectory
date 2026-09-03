@@ -28,9 +28,9 @@ class MapService(BaseModel):
 
 
 class CategoryDetail(BaseModel):
-    """Detailed category info for map filters."""
+    """Category info for map filters. Icons are static assets in the
+    frontend, looked up by name — see public/icons/need_categories."""
     name: str
-    icon: Optional[str] = None
 
 
 class MapDataResponse(BaseModel):
@@ -70,7 +70,6 @@ async def get_map_services():
     # Fetch phones and organizations
     phones = await client.list_records("phones")
     organizations = await client.list_records("organizations")
-    tax_terms = await client.list_records("taxonomy_terms")
     service_area_records = await client.list_records("service_areas")
     
     # Build lookups
@@ -98,17 +97,6 @@ async def get_map_services():
     def _area_key(name: str) -> tuple:
         rank, value = service_area_order.get(name, (1, 0.0))
         return (rank, value, name)
-
-    icon_lookup = {}
-    for record in tax_terms:
-        fields = record.get("fields", {})
-        name = fields.get("name")
-        icon_url = None
-        icon_dark = fields.get("x-icon_dark", [])
-        if icon_dark and isinstance(icon_dark, list) and len(icon_dark) > 0:
-            icon_url = icon_dark[0].get("url")
-        if name and icon_url:
-            icon_lookup[name] = icon_url
 
     location_lookup = {}
     for record in locations:
@@ -251,11 +239,11 @@ async def get_map_services():
     return MapDataResponse(
         services=map_services,
         needCategories=[
-            {"name": c, "icon": icon_lookup.get(c)} 
+            {"name": c}
             for c in sorted(need_categories)
         ],
         communityCategories=[
-            {"name": c, "icon": icon_lookup.get(c)} 
+            {"name": c}
             for c in sorted(community_categories)
         ],
         serviceAreas=sorted(service_area_names, key=_area_key),

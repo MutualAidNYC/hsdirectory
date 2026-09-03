@@ -253,7 +253,6 @@ export interface MapService {
 
 export interface Category {
     name: string;
-    icon?: string;
 }
 
 /**

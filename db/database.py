@@ -15,8 +15,7 @@ ALLOWED_TABLES = {
     "organizations", "services", "locations", "service_at_locations",
     "taxonomies", "taxonomy_terms", "phones", "addresses", "contacts",
     "schedules", "languages", "programs", "service_areas", "funding",
-    "cost_options", "required_documents", "accessibility", "sync_metadata",
-    "services_fts"
+    "cost_options", "required_documents", "accessibility", "sync_metadata"
 }
 
 def _validate_table(table: str) -> None:
@@ -193,17 +192,6 @@ async def init_db():
         await db.execute("CREATE INDEX IF NOT EXISTS idx_sal_location ON service_at_locations(location_id)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_terms_taxonomy ON taxonomy_terms(taxonomy_id)")
         
-        # Full-text search for services
-        await db.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS services_fts USING fts5(
-                id,
-                name,
-                description,
-                content='services',
-                content_rowid='rowid'
-            )
-        """)
-        
         # Sync metadata table
         await db.execute("""
             CREATE TABLE IF NOT EXISTS sync_metadata (
@@ -296,39 +284,6 @@ async def get_records(
         params.extend([per_page, offset])
         
         cursor = await db.execute(base_query, params)
-        rows = await cursor.fetchall()
-        
-        records = [json.loads(row["data"]) for row in rows]
-        return records, total
-
-
-async def search_services(
-    query: str,
-    page: int = 1,
-    per_page: int = 20
-) -> tuple[List[Dict[str, Any]], int]:
-    """Full-text search on services."""
-    async with get_db() as db:
-        # Search FTS table
-        search_query = """
-            SELECT s.data FROM services s
-            JOIN services_fts fts ON s.id = fts.id
-            WHERE services_fts MATCH ?
-            LIMIT ? OFFSET ?
-        """
-        
-        count_query = """
-            SELECT COUNT(*) FROM services s
-            JOIN services_fts fts ON s.id = fts.id
-            WHERE services_fts MATCH ?
-        """
-        
-        offset = (page - 1) * per_page
-        
-        cursor = await db.execute(count_query, [query])
-        total = (await cursor.fetchone())[0]
-        
-        cursor = await db.execute(search_query, [query, per_page, offset])
         rows = await cursor.fetchall()
         
         records = [json.loads(row["data"]) for row in rows]

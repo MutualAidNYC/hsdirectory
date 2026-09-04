@@ -7,7 +7,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Query, HTTPException
 
 from models.hsds import Page, Service, ServiceSummary
-from db.database import get_records, get_record, search_services, get_db
+from db.database import get_records, get_record, get_db
 from transform.mapper import HSDSMapper
 from config import get_settings
 import json

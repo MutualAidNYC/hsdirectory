@@ -531,7 +531,7 @@ The map resolves coordinates by using `service_at_location` links → `locations
 ## Standards Compliance
 
 - [HSDS 3.0 Specification](https://docs.openreferral.org/en/latest/hsds/api_reference.html)
-- [UK Open Referral Profile](https://openreferraluk.org/)
+- [Open Referral](https://openreferral.org/)
 - [ORUK Validator](https://openreferraluk.org/developers/validator) compatible
 
 ## Contributing
@@ -543,6 +543,10 @@ We welcome contributions! To get started:
 4. **Open a Pull Request** against our `main` branch.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full contribution guidelines.
+
+## Credits
+
+Developed by [Sarapis](https://sarapis.org/) and maintained here by Mutual Aid NYC. Sarapis also maintains an implementation at [sarapis/hsd](https://github.com/sarapis/hsd).
 
 ## License
 

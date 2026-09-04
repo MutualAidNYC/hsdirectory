@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8080
     
-    # API Metadata (UK Open Referral compliant)
+    # API Metadata. `profile` points at the UK profile for compliance checking.
     api_version: str = "HSDS-UK-3.0"
     api_profile: str = "https://github.com/OpenReferralUK/uk-profile/blob/main/docs/index.md"
     

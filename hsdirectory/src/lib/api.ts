@@ -225,16 +225,6 @@ export async function getServiceAtLocations(page: number = 1, size: number = 100
 }
 
 /**
- * Search services by query string
- * Note: Uses basic filtering - for advanced search, consider adding Meilisearch
- */
-export async function searchServices(query: string, page: number = 1): Promise<PaginatedResponse<Service>> {
-    // Currently uses basic endpoint - backend would need search param support
-    // For MVP, we fetch all and filter client-side, or implement server search
-    return getServices(page, 20);
-}
-
-/**
  * Service data for map display
  */
 export interface MapService {

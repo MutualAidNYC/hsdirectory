@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8080
     
-    # API Metadata. `profile` points at the UK profile pending a profile of our own.
-    api_version: str = "HSDS-3.0"
+    # API Metadata. `profile` points at the UK profile for compliance checking.
+    api_version: str = "HSDS-UK-3.0"
     api_profile: str = "https://github.com/OpenReferralUK/uk-profile/blob/main/docs/index.md"
     
     # Filtering Configuration

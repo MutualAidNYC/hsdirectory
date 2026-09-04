@@ -173,10 +173,10 @@ Each Airtable table should have an `id` formula field that generates a consisten
 
 Key fields per table:
 
-- **services**: `name`, `description`, `url`, `email`, `status`, `organization` (linked), `locations` (linked)
-- **organizations**: `name`, `description`, `url`, `email`, `logo`
+- **services**: `name`, `description`, `url`, `email`, `status`, `organization` (linked), `service_at_locations` (linked)
+- **organizations**: `name`, `description`, `website`, `email`, `logo`
 - **locations**: `name`, `latitude`, `longitude`, `addresses` (linked)
-- **addresses**: `address_1`, `city`, `state_province`, `postal_code`
+- **addresses**: `address_1`, `address_2`, `city`, `state_province`, `postal_code`
 
 ---
 

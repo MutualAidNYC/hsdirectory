@@ -1,6 +1,6 @@
 # HSDirectory
 
-A responsive search interface for Human Services Data Specification (HSDS) APIs. Built with Next.js 14, TypeScript, and TailwindCSS.
+A responsive search interface for Human Services Data Specification (HSDS) APIs. Built with Next.js, TypeScript, and Tailwind CSS.
 
 ## Features
 
@@ -134,9 +134,9 @@ npm run build
 
 ## Technology Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Styling**: TailwindCSS
+- **Styling**: Tailwind CSS v4
 - **Maps**: MapLibre GL with the [OpenFreeMap](https://openfreemap.org/) bright basemap
 - **Fonts**: Karla (body) & Poppins (headings), loaded via `next/font/google`
 

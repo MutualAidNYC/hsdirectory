@@ -4,7 +4,7 @@ A responsive search interface for Human Services Data Specification (HSDS) APIs.
 
 ## Features
 
-- **Full-text search** - Search across all services
+- **Search** - Keyword search across names, categories, addresses and descriptions
 - **Service browsing** - Paginated listing with detail views
 - **Organizations** - Browse service providers
 - **Interactive map** - MapLibre GL powered location view

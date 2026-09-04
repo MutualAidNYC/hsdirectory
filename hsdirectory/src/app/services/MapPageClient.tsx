@@ -168,7 +168,7 @@ export default function MapPageClient({
         syncUrl('', '', '', '');
     };
 
-    // Filter and rank resources by relevance.
+    // Filter and rank services by relevance.
     // Each search token earns points based on which field it matches:
     //   Name match = 4pts, Tag match = 3pts, Address = 2pts, Description = 1pt.
     // Results are sorted by total score (highest first).
@@ -178,6 +178,12 @@ export default function MapPageClient({
             .toLowerCase()
             .split(/\s+/)
             .filter(t => t.length > 0 && !STOP_WORDS.has(t));
+
+        // Match at a word start, so "aid" doesn't hit "said". Still a prefix
+        // match, so "hous" finds "housing".
+        const patterns = tokens.map(t =>
+            new RegExp(`(?:^|[^a-z0-9])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+        );
 
         const scored = services.map(service => {
             // Apply dropdown filters first (pass/fail)
@@ -197,15 +203,15 @@ export default function MapPageClient({
             const allText = `${nameLower} ${descLower} ${addrLower} ${tagsLower}`;
 
             // Every token must appear somewhere (AND logic)
-            if (!tokens.every(t => allText.includes(t))) return null;
+            if (!patterns.every(p => p.test(allText))) return null;
 
             // Score each token by best field match
             let score = 0;
-            for (const token of tokens) {
-                if (nameLower.includes(token)) score += 4;
-                else if (tagsLower.includes(token)) score += 3;
-                else if (addrLower.includes(token)) score += 2;
-                else if (descLower.includes(token)) score += 1;
+            for (const pattern of patterns) {
+                if (pattern.test(nameLower)) score += 4;
+                else if (pattern.test(tagsLower)) score += 3;
+                else if (pattern.test(addrLower)) score += 2;
+                else if (pattern.test(descLower)) score += 1;
             }
             return { service, score };
         });

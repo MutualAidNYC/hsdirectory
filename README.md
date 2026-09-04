@@ -456,7 +456,7 @@ docker compose up -d --build
 
 The backend is not hosted yet. Until we refactor and implement a deploy solution, the dev site on Vercel serves its data from a snapshot committed to the repo, with no API deployed and no secrets in Vercel.
 
-Set `NEXT_PUBLIC_USE_SNAPSHOT=1`, Root Directory `hsdirectory`. Full instructions, including how to regenerate the snapshot, are in [`hsdirectory/README.md`](hsdirectory/README.md#vercel--dev-site-no-backend-current-setup).
+Root Directory `hsdirectory`, no environment variables. Full instructions, including how to regenerate the snapshot, are in [`hsdirectory/README.md`](hsdirectory/README.md#vercel--dev-site-no-backend-current-setup).
 
 ## Project Structure
 

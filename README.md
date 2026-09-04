@@ -124,23 +124,26 @@ npm run dev
 
 ## Airtable Base Setup
 
-Your Airtable base needs tables matching the HSDS schema. The API expects these table names (it maps them by internal Airtable Table IDs defined in `airtable/client.py`):
+Your Airtable base needs tables matching the HSDS 3.0 schema. The API gets them by internal Airtable Table ID; the name-to-ID mapping is defined in `airtable/client.py`, and `airtable/sync.py` dictates which are pulled into the local cache.
 
-| Airtable Table | HSDS Entity | Required? |
-|---------------|-------------|-----------|
+`/map/services` fetches the tables marked below on every request. The rest are read only through the HSDS endpoints, from the synced
+cache.
+
+| Airtable Table | HSDS Entity | Required by `/map/services` |
+|---------------|-------------|----------------------------|
 | `organizations` | Organizations | **Yes** |
 | `services` | Services | **Yes** |
 | `locations` | Locations | **Yes** |
 | `addresses` | Addresses | **Yes** |
+| `service_at_location` | Service to Location links | **Yes** |
+| `service_areas` | Service Areas | **Yes** |
+| `phones` | Phones | **Yes** |
 | `contacts` | Contacts | No |
-| `phones` | Phones | No |
 | `schedules` | Schedules | No |
 | `languages` | Languages | No |
 | `taxonomies` | Taxonomies | No |
 | `taxonomy_terms` | Taxonomy Terms | No |
 | `programs` | Programs | No |
-| `service_areas` | Service Areas | No |
-| `service_at_location` | Service-Location links | No |
 | `funding` | Funding | No |
 | `cost_option` | Cost Options | No |
 | `required_document` | Required Documents | No |
@@ -170,10 +173,10 @@ Each Airtable table should have an `id` formula field that generates a consisten
 
 Key fields per table:
 
-- **services**: `name`, `description`, `url`, `email`, `status`, `organization` (linked), `locations` (linked)
-- **organizations**: `name`, `description`, `url`, `email`, `logo`
+- **services**: `name`, `description`, `url`, `email`, `status`, `organization` (linked), `service_at_locations` (linked)
+- **organizations**: `name`, `description`, `website`, `email`, `logo`
 - **locations**: `name`, `latitude`, `longitude`, `addresses` (linked)
-- **addresses**: `address_1`, `city`, `state_province`, `postal_code`
+- **addresses**: `address_1`, `address_2`, `city`, `state_province`, `postal_code`
 
 ---
 
@@ -197,7 +200,6 @@ Key fields per table:
 | `GET` | `/taxonomies` | List taxonomies |
 | `GET` | `/taxonomy_terms` | List taxonomy terms |
 | `GET` | `/service_at_locations` | Service-location links |
-| `GET` | `/locations/geocoded` | Geocoded locations for map rendering |
 | `GET` | `/map/services` | Services with coordinates and filter categories |
 
 ### Documentation
@@ -478,7 +480,6 @@ at-to-hsds/
 │   ├── organizations.py       # GET /organizations, /organizations/{id}
 │   ├── taxonomies.py          # GET /taxonomies, /taxonomy_terms
 │   ├── service_at_locations.py
-│   ├── locations.py           # GET /locations/geocoded
 │   └── map.py                 # GET /map/services
 │
 ├── hsdirectory/               # Next.js frontend

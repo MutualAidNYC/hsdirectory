@@ -24,12 +24,13 @@ class MapService(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     organization_name: Optional[str] = None
+    service_areas: List[str] = []
 
 
 class CategoryDetail(BaseModel):
-    """Detailed category info for map filters."""
+    """Category info for map filters. Icons are static assets in the
+    frontend, looked up by name — see public/icons/need_categories."""
     name: str
-    icon: Optional[str] = None
 
 
 class MapDataResponse(BaseModel):
@@ -37,6 +38,7 @@ class MapDataResponse(BaseModel):
     services: List[MapService]
     needCategories: List[CategoryDetail]
     communityCategories: List[CategoryDetail]
+    serviceAreas: List[str]
 
 
 @router.get("/services", response_model=MapDataResponse)
@@ -68,7 +70,7 @@ async def get_map_services():
     # Fetch phones and organizations
     phones = await client.list_records("phones")
     organizations = await client.list_records("organizations")
-    tax_terms = await client.list_records("taxonomy_terms")
+    service_area_records = await client.list_records("service_areas")
     
     # Build lookups
     org_lookup = {}
@@ -76,16 +78,25 @@ async def get_map_services():
         fields = record.get("fields", {})
         org_lookup[record["id"]] = fields.get("name", "")
 
-    icon_lookup = {}
-    for record in tax_terms:
+    # service_areas are linked records; the frontend filters on their names.
+    # Display order comes from `x-order` field in Airtable.
+    service_area_lookup = {}
+    service_area_order = {}
+    for record in service_area_records:
         fields = record.get("fields", {})
         name = fields.get("name")
-        icon_url = None
-        icon_dark = fields.get("x-icon_dark", [])
-        if icon_dark and isinstance(icon_dark, list) and len(icon_dark) > 0:
-            icon_url = icon_dark[0].get("url")
-        if name and icon_url:
-            icon_lookup[name] = icon_url
+        if not name:
+            continue
+        service_area_lookup[record["id"]] = name
+        order = fields.get("x-order")
+        try:
+            service_area_order[name] = (0, float(order))
+        except (TypeError, ValueError):
+            service_area_order[name] = (1, 0.0)
+
+    def _area_key(name: str) -> tuple:
+        rank, value = service_area_order.get(name, (1, 0.0))
+        return (rank, value, name)
 
     location_lookup = {}
     for record in locations:
@@ -122,6 +133,7 @@ async def get_map_services():
     # Collect unique filter values
     need_categories = set()
     community_categories = set()
+    service_area_names = set()
     
     def _resolve_location(
         loc_id: str,
@@ -198,6 +210,17 @@ async def get_map_services():
                 org_name = org_lookup[org_id]
                 break
 
+        # Get service areas, ordered by x-order in Airtable
+        service_areas = sorted(
+            (
+                service_area_lookup[a]
+                for a in (fields.get("service_areas", []) or [])
+                if a in service_area_lookup
+            ),
+            key=_area_key,
+        )
+        service_area_names.update(service_areas)
+
         map_services.append(MapService(
             id=record["id"],
             name=fields.get("name", "Unnamed Service"),
@@ -210,16 +233,18 @@ async def get_map_services():
             latitude=latitude,
             longitude=longitude,
             organization_name=org_name,
+            service_areas=service_areas,
         ))
     
     return MapDataResponse(
         services=map_services,
         needCategories=[
-            {"name": c, "icon": icon_lookup.get(c)} 
+            {"name": c}
             for c in sorted(need_categories)
         ],
         communityCategories=[
-            {"name": c, "icon": icon_lookup.get(c)} 
+            {"name": c}
             for c in sorted(community_categories)
         ],
+        serviceAreas=sorted(service_area_names, key=_area_key),
     )

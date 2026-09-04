@@ -235,36 +235,6 @@ export async function searchServices(query: string, page: number = 1): Promise<P
 }
 
 /**
- * Geocoded location for map display
- */
-export interface GeocodedLocation {
-    id: string;
-    name?: string;
-    address?: string;
-    latitude: number;
-    longitude: number;
-    service_id?: string;
-    service_name?: string;
-    organization_id?: string;
-    organization_name?: string;
-}
-
-/**
- * Response from geocoded locations endpoint
- */
-export interface GeocodedLocationsResponse {
-    total: number;
-    locations: GeocodedLocation[];
-}
-
-/**
- * Fetch geocoded locations for map display
- */
-export async function getGeocodedLocations(limit: number = 500): Promise<GeocodedLocationsResponse> {
-    return fetchApi<GeocodedLocationsResponse>(`/locations/geocoded?limit=${limit}`);
-}
-
-/**
  * Service data for map display
  */
 export interface MapService {
@@ -278,11 +248,11 @@ export interface MapService {
     communityFocus: string[];
     latitude?: number;
     longitude?: number;
+    service_areas?: string[];
 }
 
 export interface Category {
     name: string;
-    icon?: string;
 }
 
 /**
@@ -292,6 +262,7 @@ export interface MapDataResponse {
     services: MapService[];
     needCategories: Category[];
     communityCategories: Category[];
+    serviceAreas: string[];
 }
 
 /**

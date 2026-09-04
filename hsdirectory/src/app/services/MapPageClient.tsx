@@ -5,28 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TagLink } from '@/components/ui/TagLink';
 
-/** NYC boroughs and the city names that map to them in address data. */
-const BOROUGH_MAP: Record<string, string[]> = {
-    'Manhattan': ['New York', 'Manhattan'],
-    'Brooklyn': ['Brooklyn'],
-    'Bronx': ['Bronx', 'The Bronx'],
-    'Queens': ['Queens'],
-    'Staten Island': ['Staten Island'],
-};
-const BOROUGHS = Object.keys(BOROUGH_MAP);
-
-/** Extract the city/borough from a formatted address string ("street, city, state, zip"). */
-function extractBorough(address?: string): string | null {
-    if (!address) return null;
-    const parts = address.split(',').map(p => p.trim());
-    if (parts.length < 2) return null;
-    const city = parts[1];
-    for (const [borough, cities] of Object.entries(BOROUGH_MAP)) {
-        if (cities.some(c => c.toLowerCase() === city.toLowerCase())) return borough;
-    }
-    return null;
-}
-
 /** Haversine distance in miles between two lat/lng points. */
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 3958.8; // Earth radius in miles
@@ -49,30 +27,32 @@ interface Service {
     communityFocus?: string[];
     latitude?: number;
     longitude?: number;
+    service_areas?: string[];
 }
 
 interface Category {
     name: string;
-    icon?: string;
 }
 
 interface MapPageClientProps {
     services: Service[];
     needCategories: Category[];
     communityCategories: Category[];
+    serviceAreas: string[];
 }
 
 /**
  * Client component for interactive map page with URL-synced filters.
  *
- * Reads initial filter state from URL query params (?category=, ?community=)
+ * Reads initial filter state from URL query params (?category=, ?community=, ?area=)
  * and pushes URL updates when the user changes filters, enabling sharable
  * filtered views like /services?category=Housing.
  */
 export default function MapPageClient({
     services,
     needCategories,
-    communityCategories
+    communityCategories,
+    serviceAreas
 }: MapPageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -87,8 +67,8 @@ export default function MapPageClient({
     const [selectedCommunity, setSelectedCommunity] = useState<string>(
         searchParams.get('community') || ''
     );
-    const [selectedBorough, setSelectedBorough] = useState<string>(
-        searchParams.get('borough') || ''
+    const [selectedArea, setSelectedArea] = useState<string>(
+        searchParams.get('area') || ''
     );
 
     // Initialize user location from URL params (set by SearchBar location button)
@@ -109,7 +89,7 @@ export default function MapPageClient({
         setSearchQuery(searchParams.get('q') || '');
         setSelectedNeed(searchParams.get('category') || '');
         setSelectedCommunity(searchParams.get('community') || '');
-        setSelectedBorough(searchParams.get('borough') || '');
+        setSelectedArea(searchParams.get('area') || '');
         const lat = searchParams.get('lat');
         const lng = searchParams.get('lng');
         if (lat && lng) {
@@ -119,14 +99,14 @@ export default function MapPageClient({
 
     /**
      * Push filter state into the browser URL so that filtered views are
-     * bookmarkable and sharable (e.g. /services?category=Housing&q=food&borough=Brooklyn).
+     * bookmarkable and sharable (e.g. /services?category=Housing&q=food&area=Brooklyn).
      */
-    const syncUrl = useCallback((query: string, need: string, community: string, borough: string) => {
+    const syncUrl = useCallback((query: string, need: string, community: string, area: string) => {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
         if (need) params.set('category', need);
         if (community) params.set('community', community);
-        if (borough) params.set('borough', borough);
+        if (area) params.set('area', area);
         const qs = params.toString();
         router.replace(qs ? `/services?${qs}` : '/services', { scroll: false });
     }, [router]);
@@ -134,24 +114,24 @@ export default function MapPageClient({
     // Handle search submit
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        syncUrl(searchQuery, selectedNeed, selectedCommunity, selectedBorough);
+        syncUrl(searchQuery, selectedNeed, selectedCommunity, selectedArea);
     };
 
     // Handle need category change
     const handleNeedChange = (value: string) => {
         setSelectedNeed(value);
-        syncUrl(searchQuery, value, selectedCommunity, selectedBorough);
+        syncUrl(searchQuery, value, selectedCommunity, selectedArea);
     };
 
     // Handle community focus change
     const handleCommunityChange = (value: string) => {
         setSelectedCommunity(value);
-        syncUrl(searchQuery, selectedNeed, value, selectedBorough);
+        syncUrl(searchQuery, selectedNeed, value, selectedArea);
     };
 
-    // Handle borough change
-    const handleBoroughChange = (value: string) => {
-        setSelectedBorough(value);
+    // Handle service area change
+    const handleAreaChange = (value: string) => {
+        setSelectedArea(value);
         syncUrl(searchQuery, selectedNeed, selectedCommunity, value);
     };
 
@@ -182,7 +162,7 @@ export default function MapPageClient({
         setSearchQuery('');
         setSelectedNeed('');
         setSelectedCommunity('');
-        setSelectedBorough('');
+        setSelectedArea('');
         setUserLocation(null);
         setLocationStatus('idle');
         syncUrl('', '', '', '');
@@ -203,7 +183,7 @@ export default function MapPageClient({
             // Apply dropdown filters first (pass/fail)
             if (selectedNeed && !service.needFocus?.includes(selectedNeed)) return null;
             if (selectedCommunity && !service.communityFocus?.includes(selectedCommunity)) return null;
-            if (selectedBorough && extractBorough(service.address) !== selectedBorough) return null;
+            if (selectedArea && !service.service_areas?.includes(selectedArea)) return null;
 
             if (tokens.length === 0) return { service, score: 0 };
 
@@ -250,7 +230,7 @@ export default function MapPageClient({
         }
 
         return results.map(s => s.service);
-    }, [services, searchQuery, selectedNeed, selectedCommunity, selectedBorough, userLocation]);
+    }, [services, searchQuery, selectedNeed, selectedCommunity, selectedArea, userLocation]);
 
     // Get locations for map
     const mapLocations = useMemo(() => {
@@ -301,7 +281,7 @@ export default function MapPageClient({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     {isFiltersOpen ? 'Hide Filters' : 'Filters'}
-                    {(searchQuery || selectedNeed || selectedCommunity || selectedBorough) && (
+                    {(searchQuery || selectedNeed || selectedCommunity || selectedArea) && (
                         <span className="w-2 h-2 rounded-full bg-[var(--highlight)] flex-shrink-0"></span>
                     )}
                 </button>
@@ -340,7 +320,7 @@ export default function MapPageClient({
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
-                                syncUrl(e.target.value, selectedNeed, selectedCommunity, selectedBorough);
+                                syncUrl(e.target.value, selectedNeed, selectedCommunity, selectedArea);
                             }}
                             placeholder="Search resources..."
                             className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
@@ -416,26 +396,30 @@ export default function MapPageClient({
                     </select>
                 </div>
 
-                {/* Borough Filter */}
+                {/* Target Geographic Area Filter */}
                 <div className="mb-6">
-                    <label htmlFor="filter-borough" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
-                        Borough
+                    <label htmlFor="filter-area" className="block text-sm font-medium text-[var(--foreground)] opacity-80 mb-2">
+                        Target Geographic Area
                     </label>
                     <select
-                        id="filter-borough"
-                        value={selectedBorough}
-                        onChange={(e) => handleBoroughChange(e.target.value)}
+                        id="filter-area"
+                        aria-describedby="filter-area-help"
+                        value={selectedArea}
+                        onChange={(e) => handleAreaChange(e.target.value)}
                         className="w-full rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] px-3 py-2 text-sm text-[var(--foreground)] focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                     >
-                        <option value="">All Boroughs</option>
-                        {BOROUGHS.map(b => (
-                            <option key={b} value={b}>{b}</option>
+                        <option value="">All areas</option>
+                        {serviceAreas.map(a => (
+                            <option key={a} value={a}>{a}</option>
                         ))}
                     </select>
+                    <p id="filter-area-help" className="mt-1 text-xs text-[var(--foreground)] opacity-80">
+                        Where a resource is offered, not where it is located.
+                    </p>
                 </div>
 
                 {/* Clear Filters */}
-                {(searchQuery || selectedNeed || selectedCommunity || selectedBorough) && (
+                {(searchQuery || selectedNeed || selectedCommunity || selectedArea) && (
                     <button
                         onClick={handleClearFilters}
                         className="btn btn-accent w-full"

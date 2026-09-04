@@ -101,15 +101,54 @@ This application expects an HSDS 3.0 compliant API with these endpoints:
 
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel — dev site, no backend (current setup)
+
+The API is not hosted yet, so the dev site temporarily serves its data from a snapshot committed to this repo. Set one environment variable in the Vercel project:
+
+```
+NEXT_PUBLIC_USE_SNAPSHOT=1
+```
+
+Set the project's Root Directory to `hsdirectory`.
+`NEXT_PUBLIC_API_URL` is unused in this mode.
+
+#### Regenerating the snapshot
+
+Data is frozen at dump time. To refresh it, run the API locally, then:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
+cd hsdirectory
+node scripts/dump-snapshot.mjs          # defaults to http://localhost:8080
 ```
+
+That rewrites `src/data/snapshot.json` (committed, ~1.5 MB). Commit it for the change to reach a deployment.
+
+Run the site against the snapshot locally with:
+
+```bash
+NEXT_PUBLIC_USE_SNAPSHOT=1 npm run dev
+```
+
+#### What this is, and when it goes away
+
+Scaffolding with an expiry. Three files plus one branch in `fetchApi`:
+
+| File | Role |
+|---|---|
+| `scripts/dump-snapshot.mjs` | Dumps the dataset from a running API |
+| `src/data/snapshot.json` | The committed dataset |
+| `src/lib/snapshot.ts` | Answers endpoint requests from that JSON |
+
+When the backend has a public URL: unset `NEXT_PUBLIC_USE_SNAPSHOT`, point
+`NEXT_PUBLIC_API_URL` at it, and delete all four. Do not build features on top
+of the snapshot layer.
+
+Known limits: search is a substring match over name and description rather than the real query, so it is fine for design review but not for judging search
+quality. Endpoints the app does not call are absent and return 404.
+
+### Vercel — with a hosted API
+
+Once a backend exists, drop `NEXT_PUBLIC_USE_SNAPSHOT` and set `NEXT_PUBLIC_API_URL` to its public URL.
 
 ### Docker
 

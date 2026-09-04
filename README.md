@@ -110,7 +110,7 @@ cd hsdirectory
 npm install
 
 # Configure the API URL
-cp .env.local.example .env.local
+cp .env.example .env.local
 # Or create manually:
 echo "NEXT_PUBLIC_API_URL=http://localhost:8080" > .env.local
 
@@ -451,6 +451,12 @@ docker compose up -d --build
 ```
 
 ---
+
+### Option C: Dev site with no backend (current)
+
+The backend is not hosted yet. Until we refactor and implement a deploy solution, the dev site on Vercel serves its data from a snapshot committed to the repo, with no API deployed and no secrets in Vercel.
+
+Set `NEXT_PUBLIC_USE_SNAPSHOT=1`, Root Directory `hsdirectory`. Full instructions, including how to regenerate the snapshot, are in [`hsdirectory/README.md`](hsdirectory/README.md#vercel--dev-site-no-backend-current-setup).
 
 ## Project Structure
 

@@ -138,6 +138,18 @@ export class ApiError extends Error {
  * Generic fetch wrapper with error handling
  */
 async function fetchApi<T>(endpoint: string): Promise<T> {
+    // Snapshot mode: no backend. Remove with the rest of the scaffolding when
+    // we deploy the api backend.
+    if (process.env.NEXT_PUBLIC_USE_SNAPSHOT === '1') {
+        const { resolveFromSnapshot, SnapshotMiss } = await import('./snapshot');
+        try {
+            return resolveFromSnapshot<T>(endpoint);
+        } catch (e) {
+            if (e instanceof SnapshotMiss) throw new ApiError(404, e.message);
+            throw e;
+        }
+    }
+
     const response = await fetch(`${API_URL}${endpoint}`, {
         headers: {
             'Accept': 'application/json',

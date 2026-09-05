@@ -39,11 +39,9 @@ Edit `.env.local`:
 ```env
 # Required: Your HSDS API endpoint
 NEXT_PUBLIC_API_URL=http://localhost:8080
-
-# Optional: App branding
-NEXT_PUBLIC_APP_NAME=Mutual Aid NYC Community Resources Library
-NEXT_PUBLIC_APP_DESCRIPTION=Find community services and resources
 ```
+
+See `.env.example` for the optional variables.
 
 ### Development
 

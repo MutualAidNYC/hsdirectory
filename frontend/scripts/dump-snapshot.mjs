@@ -1,7 +1,7 @@
 /**
  * Dump the dataset from a locally running API into src/data/snapshot.json.
  *
- * Usage, from hsdirectory/, with the API up:
+ * Usage, from frontend/, with the API up:
  *   node scripts/dump-snapshot.mjs [http://localhost:8080]
  *
  * Scaffolding to provide a temporary snapshot for the frontend while we build out the deploy solution.

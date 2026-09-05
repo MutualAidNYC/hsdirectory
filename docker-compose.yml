@@ -11,7 +11,7 @@ services:
 
   frontend:
     build:
-      context: ./hsdirectory
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}

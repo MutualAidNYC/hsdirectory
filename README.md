@@ -1,28 +1,38 @@
-# Mutual Aid NYC HSDirectory
+# Mutual Aid NYC Resource Directory
 
-A FastAPI application that syncs data from an [Airtable](https://airtable.com) base and serves it through an [HSDS 3.0](https://docs.openreferral.org/) compliant REST API. Includes a Next.js search frontend with interactive maps.
+Powers the Mutual Aid NYC Community Resources Library. A FastAPI application that syncs data from an [Airtable](https://airtable.com) base and serves it through an [HSDS 3.0](https://docs.openreferral.org/) compliant REST API. Includes a Next.js search frontend with interactive maps.
 
 Built for [Open Referral](https://openreferral.org/) and compatible with the [UK Open Referral (ORUK)](https://openreferraluk.org/) validator.
 
 ## Architecture
 
 ```
-┌─────────────┐      sync every 15min      ┌──────────────┐
-│   Airtable  │ ──────────────────────────▶ │  SQLite DB   │
-│   (source)  │                             │  (cache)     │
-└─────────────┘                             └──────┬───────┘
-                                                   │
-                                            ┌──────┴───────┐
-                                            │   FastAPI     │
-                                            │  HSDS 3.0 API │
-                                            │  :8080        │
-                                            └──────┬───────┘
-                                                   │
-                                          ┌────────┴────────┐
-                                          │   Next.js       │
-                                          │  HSDirectory    │
-                                          │  :3000          │
-                                          └─────────────────┘
+┌──────────────┐   sync every 15 min   ┌──────────────┐
+│   Airtable   │ ────────────────────▶ │  SQLite DB   │
+│   (source)   │                       │   (cache)    │
+└──────────────┘                       └──────┬───────┘
+                                              │
+                                       ┌──────┴───────┐
+                                       │   FastAPI    │
+                                       │ HSDS 3.0 API │
+                                       │    :8080     │
+                                       └──────┬───────┘
+                                              │
+                                       ┌──────┴───────┐
+                                       │   Next.js    │
+                                       │  frontend/   │
+                                       │    :3000     │
+                                       └──────────────┘
+```
+
+The dev site on Vercel skips the backend entirely — there is nothing hosted to
+talk to yet:
+
+```
+┌──────────────────┐        ┌──────────────┐
+│  snapshot.json   │ ─────▶ │   Next.js    │
+│   (committed)    │        │  on Vercel   │
+└──────────────────┘        └──────────────┘
 ```
 
 **How it works:**
@@ -45,8 +55,8 @@ Built for [Open Referral](https://openreferral.org/) and compatible with the [UK
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/MutualAidNYC/hsdirectory.git
-cd hsdirectory
+git clone https://github.com/MutualAidNYC/resource-directory.git
+cd frontend
 ```
 
 ### 2. Set up the API (Python backend)
@@ -104,7 +114,7 @@ INFO - Initial sync complete
 ### 5. Set up the frontend (Next.js)
 
 ```bash
-cd hsdirectory
+cd frontend
 
 # Install dependencies
 npm install
@@ -226,12 +236,11 @@ All configuration is via environment variables (loaded from `.env`):
 | `PUBLISHED_STATUS_VALUE` | `Published` | Only show services with this status (empty = show all) |
 | `FILTER_ORGS_WITHOUT_PUBLISHED_SERVICES` | `true` | Hide orgs with no published services |
 
-Frontend environment (in `hsdirectory/.env.local`):
+Frontend environment (in `frontend/.env.local`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | URL of the HSDS API |
-| `NEXT_PUBLIC_APP_NAME` | `HSDirectory` | Application display name |
 
 ---
 
@@ -260,7 +269,7 @@ sudo chown $USER:$USER /opt/mutualaid
 ```bash
 # Clone or copy the code
 cd /opt/mutualaid
-git clone https://github.com/MutualAidNYC/hsdirectory.git .
+git clone https://github.com/MutualAidNYC/resource-directory.git .
 cd backend
 
 # Python setup
@@ -272,7 +281,7 @@ cp .env.example .env
 nano .env  # Add your Airtable credentials
 
 # Frontend setup
-cd hsdirectory
+cd frontend
 npm install --production
 echo "NEXT_PUBLIC_API_URL=https://yourdomain.com" > .env.local
 npm run build
@@ -409,7 +418,7 @@ services:
 
   frontend:
     build:
-      context: ./hsdirectory
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -433,7 +442,7 @@ EXPOSE 8080
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 ```
 
-**Frontend Dockerfile** (`hsdirectory/Dockerfile`):
+**Frontend Dockerfile** (`frontend/Dockerfile`):
 
 ```dockerfile
 FROM node:18-alpine
@@ -456,7 +465,7 @@ docker compose up -d --build
 
 The backend is not hosted yet. Until we refactor and implement a deploy solution, the dev site on Vercel serves its data from a snapshot committed to the repo, with no API deployed and no secrets in Vercel.
 
-Root Directory `hsdirectory`, no environment variables. Full instructions, including how to regenerate the snapshot, are in [`hsdirectory/README.md`](hsdirectory/README.md#vercel--dev-site-no-backend-current-setup).
+Root Directory `frontend`, no environment variables. Full instructions, including how to regenerate the snapshot, are in [`frontend/README.md`](frontend/README.md#vercel--dev-site-no-backend-current-setup).
 
 ## Project Structure
 
@@ -488,7 +497,7 @@ at-to-hsds/
 │   ├── service_at_locations.py
 │   └── map.py                 # GET /map/services
 │
-├── hsdirectory/               # Next.js frontend
+├── frontend/               # Next.js frontend
 │   ├── src/
 │   │   ├── app/               # App router pages
 │   │   │   ├── page.tsx       # Home (category grid)

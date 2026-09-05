@@ -1,4 +1,4 @@
-# HSDirectory
+# Mutual Aid NYC Resource Directory
 
 A responsive search interface for Human Services Data Specification (HSDS) APIs. Built with Next.js, TypeScript, and Tailwind CSS.
 
@@ -22,7 +22,7 @@ A responsive search interface for Human Services Data Specification (HSDS) APIs.
 
 ```bash
 # Clone/navigate to this directory
-cd hsdirectory
+cd frontend
 
 # Install dependencies
 npm install
@@ -41,7 +41,7 @@ Edit `.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:8080
 
 # Optional: App branding
-NEXT_PUBLIC_APP_NAME=HSDirectory
+NEXT_PUBLIC_APP_NAME=Mutual Aid NYC Community Resources Library
 NEXT_PUBLIC_APP_DESCRIPTION=Find community services and resources
 ```
 
@@ -67,7 +67,7 @@ npm start
 ## Project Structure
 
 ```
-hsdirectory/
+frontend/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── page.tsx            # Homepage
@@ -105,14 +105,14 @@ This application expects an HSDS 3.0 compliant API with these endpoints:
 
 The API is not hosted yet, so the dev site temporarily serves its data from a snapshot committed to this repo. No environment variables are needed: a deployed build with no API URL configured uses the snapshot automatically, on branch previews and production alike.
 
-Set the project's Root Directory to `hsdirectory`. Leave `NEXT_PUBLIC_API_URL` unset — if it is set on a deployment and points at localhost, the app raises an explicit error instead of loading nothing.
+Set the project's Root Directory to `frontend`. Leave `NEXT_PUBLIC_API_URL` unset — if it is set on a deployment and points at localhost, the app raises an explicit error instead of loading nothing.
 
 #### Regenerating the snapshot
 
 Data is frozen at dump time. To refresh it, run the API locally, then:
 
 ```bash
-cd hsdirectory
+cd frontend
 node scripts/dump-snapshot.mjs          # defaults to http://localhost:8080
 ```
 

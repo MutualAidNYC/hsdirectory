@@ -1,4 +1,4 @@
-# Contributing to Mutual Aid NYC HSDirectory
+# Contributing to Mutual Aid NYC Resource Directory
 
 Thanks for your interest in contributing! This project bridges Airtable data to the [Human Services Data Specification (HSDS)](https://docs.openreferral.org/) API format and presents it via a Next.js directory.
 
@@ -7,7 +7,7 @@ Thanks for your interest in contributing! This project bridges Airtable data to 
 To run the full stack locally for development:
 
 1. Fork the repository
-2. Clone your fork locally (`git clone https://github.com/MutualAidNYC/hsdirectory.git`)
+2. Clone your fork locally (`git clone https://github.com/MutualAidNYC/resource-directory.git`)
 3. Copy `.env.example` to `.env` and add your Airtable credentials
 4. Start the backend API:
    ```bash
@@ -18,7 +18,7 @@ To run the full stack locally for development:
    ```
 5. In a second terminal, start the Next.js frontend:
    ```bash
-   cd hsdirectory
+   cd frontend
    npm install
    echo "NEXT_PUBLIC_API_URL=http://localhost:8080" > .env.local
    npm run dev
@@ -48,7 +48,7 @@ Open an issue describing the feature and its use case.
 ## Code Style
 
 - **Python**: PEP 8, type hints where practical
-- **TypeScript** (HSDirectory frontend): ESLint defaults
+- **TypeScript** (resource-directory frontend): ESLint defaults
 - **Commits**: Use conventional commit messages (e.g., `feat:`, `fix:`, `docs:`)
 
 ## Questions?

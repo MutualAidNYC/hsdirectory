@@ -22,7 +22,7 @@ env/
 *.sqlite3
 
 # Data artifacts (regenerated on sync)
-data/
+/data/
 
 # Deployment (server-specific)
 deploy.sh
@@ -56,3 +56,4 @@ build/
 
 # Agent instructions (local, not shared)
 CLAUDE.local.md
+.claude/rules/

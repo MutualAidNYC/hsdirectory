@@ -21,6 +21,16 @@ const API_URL =
     : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
 
 /**
+ * Use the committed snapshot when there is no API deployed. Deployed builds
+ * with no API configured pick it up automatically.
+ * NEXT_PUBLIC_USE_SNAPSHOT=1 forces it on locally.
+ */
+const DEPLOYED = !!process.env.VERCEL || !!process.env.NEXT_PUBLIC_VERCEL_ENV;
+const API_CONFIGURED = !!process.env.NEXT_PUBLIC_API_URL || !!process.env.INTERNAL_API_URL;
+const USE_SNAPSHOT =
+  process.env.NEXT_PUBLIC_USE_SNAPSHOT === '1' || (DEPLOYED && !API_CONFIGURED);
+
+/**
  * HSDS Service type based on HSDS 3.0 specification
  */
 export interface Service {
@@ -138,6 +148,26 @@ export class ApiError extends Error {
  * Generic fetch wrapper with error handling
  */
 async function fetchApi<T>(endpoint: string): Promise<T> {
+    // Snapshot mode: no backend. Remove with the rest of the scaffolding when
+    // we deploy the api backend.
+    if (USE_SNAPSHOT) {
+        const { resolveFromSnapshot, SnapshotMiss } = await import('./snapshot');
+        try {
+            return resolveFromSnapshot<T>(endpoint);
+        } catch (e) {
+            if (e instanceof SnapshotMiss) throw new ApiError(404, e.message);
+            throw e;
+        }
+    }
+
+    if (DEPLOYED && API_URL.includes('localhost')) {
+        throw new ApiError(
+            500,
+            'Deployed build is pointed at localhost. Set NEXT_PUBLIC_API_URL to a reachable API, ' +
+            'or unset it to serve from the committed snapshot.'
+        );
+    }
+
     const response = await fetch(`${API_URL}${endpoint}`, {
         headers: {
             'Accept': 'application/json',

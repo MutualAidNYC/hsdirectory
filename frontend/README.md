@@ -1,4 +1,4 @@
-# HSDirectory
+# Mutual Aid NYC Resource Directory
 
 A responsive search interface for Human Services Data Specification (HSDS) APIs. Built with Next.js, TypeScript, and Tailwind CSS.
 
@@ -22,7 +22,7 @@ A responsive search interface for Human Services Data Specification (HSDS) APIs.
 
 ```bash
 # Clone/navigate to this directory
-cd hsdirectory
+cd frontend
 
 # Install dependencies
 npm install
@@ -39,11 +39,9 @@ Edit `.env.local`:
 ```env
 # Required: Your HSDS API endpoint
 NEXT_PUBLIC_API_URL=http://localhost:8080
-
-# Optional: App branding
-NEXT_PUBLIC_APP_NAME=HSDirectory
-NEXT_PUBLIC_APP_DESCRIPTION=Find community services and resources
 ```
+
+See `.env.example` for the optional variables.
 
 ### Development
 
@@ -67,7 +65,7 @@ npm start
 ## Project Structure
 
 ```
-hsdirectory/
+frontend/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── page.tsx            # Homepage
@@ -101,15 +99,49 @@ This application expects an HSDS 3.0 compliant API with these endpoints:
 
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel — dev site, no backend (current setup)
+
+The API is not hosted yet, so the dev site temporarily serves its data from a snapshot committed to this repo. No environment variables are needed: a deployed build with no API URL configured uses the snapshot automatically, on branch previews and production alike.
+
+Set the project's Root Directory to `frontend`. Leave `NEXT_PUBLIC_API_URL` unset — if it is set on a deployment and points at localhost, the app raises an explicit error instead of loading nothing.
+
+#### Regenerating the snapshot
+
+Data is frozen at dump time. To refresh it, run the API locally, then:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
+cd frontend
+node scripts/dump-snapshot.mjs          # defaults to http://localhost:8080
 ```
+
+That rewrites `src/data/snapshot.json` (committed, ~1.5 MB). Commit it for the change to reach a deployment.
+
+Locally the real API is used by default. To run against the snapshot instead:
+
+```bash
+NEXT_PUBLIC_USE_SNAPSHOT=1 npm run dev
+```
+
+#### What this is, and when it goes away
+
+Scaffolding with an expiry. Three files plus one branch in `fetchApi`:
+
+| File | Role |
+|---|---|
+| `scripts/dump-snapshot.mjs` | Dumps the dataset from a running API |
+| `src/data/snapshot.json` | The committed dataset |
+| `src/lib/snapshot.ts` | Answers endpoint requests from that JSON |
+
+When the backend has a public URL: set `NEXT_PUBLIC_API_URL` to it, which
+switches deployments off the snapshot on its own, then delete all four files and the `USE_SNAPSHOT` block in `api.ts`. Do not build features on top of the
+snapshot layer.
+
+Known limits: search is a substring match over name and description rather than the real query, so it is fine for design review but not for judging search
+quality. Endpoints the app does not call are absent and return 404.
+
+### Vercel — with a hosted API
+
+Once a backend exists, set `NEXT_PUBLIC_API_URL` to its public URL. Deployments switch off the snapshot automatically.
 
 ### Docker
 

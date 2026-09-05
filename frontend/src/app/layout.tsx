@@ -18,11 +18,12 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: {
-    default: "HSDirectory - Find Community Resources",
-    template: "%s | HSDirectory",
+    default: "Mutual Aid NYC Community Resources Library",
+    template: "%s | Community Resources Library",
   },
-  description: "Search and discover community services and resources in your area. Powered by Open Referral HSDS.",
-  keywords: ["community services", "human services", "social services", "resources", "directory"],
+  description:
+    "Find food, housing, legal help, social services, and other community resources for New Yorkers. Free and low-cost, community-sourced and volunteer-curated.",
+    //TODO: add open graph metadata
 };
 
 export default function RootLayout({

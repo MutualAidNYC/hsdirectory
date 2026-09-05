@@ -43,7 +43,7 @@ talk to yet:
 
 ## Prerequisites
 
-- **Python 3.10+**
+- **Python 3.12+**
 - **Node.js 18+** (for the frontend)
 - An **Airtable** account with a base structured for HSDS data
 - An **Airtable Personal Access Token** strictly limited to the `data.records:read` scope. **Do not use a full-access API Key.**
